@@ -1,0 +1,6 @@
+@ChatLab.SseService_HostAddress = http://localhost:5063
+
+GET {{ChatLab.SseService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

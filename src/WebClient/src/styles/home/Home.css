@@ -1,0 +1,66 @@
+.Home {
+    text-align: center;
+}
+
+.Home-logo-container {
+    color: rgb(67, 63, 63);
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.Home-logo {
+    width: 50px;
+}
+
+.startSection {
+    background-color: white;
+    color: black;
+    padding: 50px;
+}
+
+.links {
+    padding-top: 25px;
+    display: flex;
+    gap: 2%;
+    font-size: 20px;
+    font-weight: bold;
+    justify-content: center;
+    align-items: center;
+}
+
+.link {
+    color: rgb(122, 127, 121);
+    font-size: 20px;
+    text-decoration: none;
+}
+
+.sign {
+    color: rgb(93, 211, 235);
+    font-weight: bold;
+}
+
+.startSection h2 {
+    color: rgb(45, 137, 156);
+    font-family: Garamond, serif;
+    font-weight: bold;
+    padding-top: 30px;
+}
+
+.startSection h4 {
+    font-family: 'Times New Roman', serif;
+}
+
+.blackSection {
+    background-color: rgb(32, 31, 31);
+    padding: 80px;
+}
+
+.blackSection h1 {
+    color: rgb(93, 211, 235);
+    padding-bottom: 40px;
+}
+
+.blackSection h5 {
+    color: rgb(193, 193, 193);
+}

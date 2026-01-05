@@ -1,0 +1,68 @@
+.AdminChats {
+    text-align: center;
+    background-color: rgb(240, 247, 240);
+    padding: 20px 15% 20px 15%;
+}
+
+.modal-content-centered {
+    text-align: center;
+    margin: 0 auto;
+}
+
+.button-spacing {
+    margin-right: 10px;
+}
+
+/* Responsive Table */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.chat-room-row {
+    line-height: 4;
+}
+
+.table-responsive table {
+    min-width: 600px;
+}
+
+/* Mobile Specific Styles */
+@media (max-width: 576px) {
+    .table-responsive table {
+        min-width: 100%;
+    }
+}
+
+.admin-pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.pagination-blue {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pagination-blue .page-item {
+    margin: 2px;
+}
+
+.pagination-blue .page-item .page-link {
+    background-color: #1f6ccb;
+    border-color: #1f6ccb;
+    color: #fff;
+}
+
+.pagination-blue .page-item.active .page-link {
+    background-color: #183961; 
+    border-color: #183961;
+}
+
+.pagination-blue .page-item .page-link:hover {
+    background-color: #185196;
+    border-color: #185196;
+}

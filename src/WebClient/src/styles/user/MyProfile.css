@@ -1,0 +1,43 @@
+.MyProfile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgb(240, 247, 240);
+    padding: 20px 10% 0px 10%;
+    font-size: 17px;
+}
+
+.buttons-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.form-button {
+    width: 200px;
+}
+
+.data-container {
+    background-color: rgb(39, 37, 37);
+    width: 70%;
+    border-radius: 30px;
+    padding-top: 40px;
+    padding-bottom: 20px;
+}
+
+.blue-label {
+    color: rgb(93, 211, 235);
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.email-label {
+    color: rgb(0, 175, 210);
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.white-label {
+    color: white;
+}

@@ -1,0 +1,46 @@
+.AdminRaportsUsers {
+    text-align: center;
+    padding: 20px 5%;
+}
+
+.button-spacing {
+    margin-right: 10px;
+}
+
+.histogram-container {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .AdminRaportsUsers {
+        padding: 20px 2%;
+    }
+
+    .button-spacing {
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+
+    .histogram-container {
+        width: 100%;
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .AdminRaportsUsers {
+        font-size: 14px;
+        padding: 20px 1%;
+    }
+
+    .button-spacing {
+        margin-right: 3px;
+        margin-bottom: 3px;
+    }
+
+    .histogram-container {
+        padding: 0 5px;
+    }
+}

@@ -1,0 +1,8 @@
+.blue-links2 .nav-link {
+  color: rgb(228, 228, 228);
+  font-weight: 400;
+}
+
+.blue-links2 .dropdown-item.active {
+  background: rgb(80, 156, 255) !important;
+}

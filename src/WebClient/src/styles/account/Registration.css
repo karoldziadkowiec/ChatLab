@@ -1,0 +1,35 @@
+.Registration {
+    background-color: rgb(70, 78, 80);
+    background-size: cover;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.logo-container {
+    color: white;
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.Registration h2{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: rgb(93, 211, 235);
+    padding-bottom: 10px;
+}
+
+.registration-container {
+    background-color: rgba(25, 25, 25, 0.7);
+    width: 60%;
+    padding: 2% 0% 2% ;
+    border-radius: 50px;
+}
+
+.white-label {
+    color: white;
+}

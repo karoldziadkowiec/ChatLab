@@ -1,6 +1,0 @@
-@ChatLab.SignalRService_HostAddress = http://localhost:5291
-
-GET {{ChatLab.SignalRService_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

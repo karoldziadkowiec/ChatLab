@@ -15,73 +15,24 @@
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     },
     {
-      "DownstreamPathTemplate": "/api/health",
+      "DownstreamPathTemplate": "/api/rt/{transport}/health",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8011 }],
-      "UpstreamPathTemplate": "/rt/signalr/api/health",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8010 }],
+      "UpstreamPathTemplate": "/rt/{transport}/api/health",
       "UpstreamHttpMethod": ["GET"]
     },
     {
-      "DownstreamPathTemplate": "/{everything}",
+      "DownstreamPathTemplate": "/api/rt/transports",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8011 }],
-      "UpstreamPathTemplate": "/rt/signalr/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    },
-    {
-      "DownstreamPathTemplate": "/api/health",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8012 }],
-      "UpstreamPathTemplate": "/rt/websocket/api/health",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8010 }],
+      "UpstreamPathTemplate": "/rt/transports",
       "UpstreamHttpMethod": ["GET"]
     },
     {
-      "DownstreamPathTemplate": "/{everything}",
+      "DownstreamPathTemplate": "/api/rt/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8012 }],
-      "UpstreamPathTemplate": "/rt/websocket/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    },
-    {
-      "DownstreamPathTemplate": "/api/health",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8013 }],
-      "UpstreamPathTemplate": "/rt/polling/api/health",
-      "UpstreamHttpMethod": ["GET"]
-    },
-    {
-      "DownstreamPathTemplate": "/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8013 }],
-      "UpstreamPathTemplate": "/rt/polling/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    },
-    {
-      "DownstreamPathTemplate": "/api/health",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8014 }],
-      "UpstreamPathTemplate": "/rt/grpc/api/health",
-      "UpstreamHttpMethod": ["GET"]
-    },
-    {
-      "DownstreamPathTemplate": "/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8014 }],
-      "UpstreamPathTemplate": "/rt/grpc/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    },
-    {
-      "DownstreamPathTemplate": "/api/health",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8015 }],
-      "UpstreamPathTemplate": "/rt/sse/api/health",
-      "UpstreamHttpMethod": ["GET"]
-    },
-    {
-      "DownstreamPathTemplate": "/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8015 }],
-      "UpstreamPathTemplate": "/rt/sse/{everything}",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8010 }],
+      "UpstreamPathTemplate": "/rt/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     },
     {

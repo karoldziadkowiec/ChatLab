@@ -27,7 +27,7 @@ namespace ChatLab.CoreService
             builder.Services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseSqlServer(configuration.GetConnectionString("MSSQLConnectionString") ??
-                    throw new InvalidOperationException("MS SQL connection string is not found."));
+                    throw new InvalidOperationException("Microsoft SQL Server's connection string not found."));
             });
 
             // Identity with support for roles
@@ -93,6 +93,7 @@ namespace ChatLab.CoreService
             // Repositories
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IProblemRepository, ProblemRepository>();
+            builder.Services.AddScoped<IUserFollowRepository, UserFollowRepository>();
 
             // AutoMapper service
             builder.Services.AddAutoMapper(typeof(Program));
@@ -185,7 +186,7 @@ namespace ChatLab.CoreService
             app.MapControllers();
 
             // Use SignalR
-            app.MapHub<ChatHub>("/chathub");
+            app.MapHub<ChatHub>("/signalr-chathub");
 
             // Use and map WebSockets
             app.UseWebSockets(new WebSocketOptions

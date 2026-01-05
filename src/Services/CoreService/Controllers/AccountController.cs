@@ -62,7 +62,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/account/roles
-        [Authorize(Roles = Role.Admin)]
+        [Authorize(Policy = "AdminRights")]
         [HttpGet("roles")]
         public async Task<ActionResult<IEnumerable<string>>> GetRoles()
         {
@@ -71,7 +71,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // POST: api/account/roles/make-admin/:userId
-        [Authorize(Roles = Role.Admin)]
+        [Authorize(Policy = "AdminRights")]
         [HttpPost("roles/make-admin/{userId}")]
         public async Task<IActionResult> MakeAnAdmin(string userId)
         {
@@ -80,7 +80,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // POST: api/account/roles/make-user/:userId
-        [Authorize(Roles = Role.Admin)]
+        [Authorize(Policy = "AdminRights")]
         [HttpPost("roles/make-user/{userId}")]
         public async Task<IActionResult> DemoteFromAdmin(string userId)
         {

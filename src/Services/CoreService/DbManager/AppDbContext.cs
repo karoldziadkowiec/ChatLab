@@ -10,7 +10,7 @@ namespace ChatLab.CoreService.DbManager
         public DbSet<Chat> Chats { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Problem> Problems { get; set; }
-        public DbSet<User> Users { get; set; }
+        public DbSet<UserFollow> UserFollowers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,6 +51,18 @@ namespace ChatLab.CoreService.DbManager
                 .WithMany()
                 .HasForeignKey(p => p.RequesterId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserFollow>()
+                .HasOne(f => f.Follower)
+                .WithMany()
+                .HasForeignKey(f => f.FollowerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<UserFollow>()
+                .HasOne(f => f.Followed)
+                .WithMany()
+                .HasForeignKey(f => f.FollowedId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

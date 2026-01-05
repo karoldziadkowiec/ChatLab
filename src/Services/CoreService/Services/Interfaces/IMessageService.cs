@@ -11,7 +11,7 @@ namespace ChatLab.CoreService.Services.Interfaces
         Task<IEnumerable<Message>> GetMessagesForChat(int chatId);
         Task<int> GetMessagesForChatCount(int chatId);
         Task<DateTime> GetLastMessageDateForChat(int chatId);
-        Task<Message> SendMessage(MessageSendDTO dto);
+        Task<Message> SendMessage(MessageSendDTO messageDto);
         Task DeleteMessage(int messageId);
     }
 }

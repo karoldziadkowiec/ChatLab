@@ -69,9 +69,13 @@ namespace ChatLab.CoreService.Repositories.Classes
 
         public async Task CheckProblemSolved(Problem problem)
         {
-            problem.IsSolved = true;
+            var entity = await _dbContext.Problems
+                .FirstOrDefaultAsync(p => p.Id == problem.Id);
 
-            _dbContext.Problems.Update(problem);
+            if (entity == null)
+                throw new KeyNotFoundException($"Problem with id {problem.Id} not found.");
+
+            entity.IsSolved = true;
             await _dbContext.SaveChangesAsync();
         }
 

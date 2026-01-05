@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace ChatLab.CoreService.Models.DTOs
+﻿namespace ChatLab.CoreService.Models.DTOs
 {
     public class UserUpdateDTO
     {

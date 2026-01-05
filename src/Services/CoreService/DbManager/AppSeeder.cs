@@ -32,6 +32,11 @@ namespace ChatLab.CoreService.DbManager
         {
             string adminEmail = "admin@admin.com";
             string adminPassword = "Admin1!";
+            string adminFirstName = "Admin";
+            string adminLastName = "Admin";
+            string adminPhoneNumber = "000000000";
+            string adminLocation = "Admin";
+            DateTime adminCreationDate = DateTime.Now;
 
             var context = services.GetRequiredService<AppDbContext>();
             var userManager = services.GetRequiredService<UserManager<User>>();
@@ -44,11 +49,11 @@ namespace ChatLab.CoreService.DbManager
                 {
                     Email = adminEmail,
                     UserName = adminEmail,
-                    FirstName = "Admin",
-                    LastName = "Admin",
-                    PhoneNumber = "000000000",
-                    Location = "Admin",
-                    CreationDate = DateTime.Now,
+                    FirstName = adminFirstName,
+                    LastName = adminLastName,
+                    PhoneNumber = adminPhoneNumber,
+                    Location = adminLocation,
+                    CreationDate = adminCreationDate,
                 };
                 await userManager.CreateAsync(admin, adminPassword);
                 await userManager.AddToRoleAsync(admin, Role.Admin);
@@ -59,6 +64,11 @@ namespace ChatLab.CoreService.DbManager
         {
             string unknownUserEmail = "unknown@unknown.com";
             string unknownUserPassword = "Unknown1!";
+            string unknownUserFirstName = "Unknown";
+            string unknownUserLastName = "Unknown";
+            string unknownUserPhoneNumber = "000000000";
+            string unknownUserLocation = "Unknown";
+            DateTime unknownUserCreationDate = DateTime.Now;
 
             var context = services.GetRequiredService<AppDbContext>();
             var userManager = services.GetRequiredService<UserManager<User>>();
@@ -71,11 +81,11 @@ namespace ChatLab.CoreService.DbManager
                 {
                     Email = unknownUserEmail,
                     UserName = unknownUserEmail,
-                    FirstName = "Unknown",
-                    LastName = "Unknown",
-                    PhoneNumber = "000000000",
-                    Location = "Unknown",
-                    CreationDate = DateTime.Now,
+                    FirstName = unknownUserFirstName,
+                    LastName = unknownUserLastName,
+                    PhoneNumber = unknownUserPhoneNumber,
+                    Location = unknownUserLocation,
+                    CreationDate = unknownUserCreationDate,
                 };
                 await userManager.CreateAsync(unknownUser, unknownUserPassword);
                 await userManager.AddToRoleAsync(unknownUser, Role.User);

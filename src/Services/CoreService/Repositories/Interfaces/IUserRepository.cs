@@ -5,16 +5,17 @@ namespace ChatLab.CoreService.Repositories.Interfaces
 {
     public interface IUserRepository
     {
-        Task<UserDTO> GetUser(string userId);
-        Task<IEnumerable<UserDTO>> GetUsers();
-        Task<IEnumerable<UserDTO>> GetOnlyUsers();
-        Task<IEnumerable<UserDTO>> GetOnlyAdmins();
-        Task<string> GetUserRole(string userId);
+        Task<User?> GetUser(string userId);
+        Task<IEnumerable<User>> GetUsers();
+        Task<IEnumerable<User>> GetOnlyUsers();
+        Task<IEnumerable<User>> GetOnlyAdmins();
+        Task<string?> GetUserRole(string userId);
         Task<int> GetUserCount();
-        Task UpdateUser(string userId, UserUpdateDTO userUpdateDTO);
-        Task ResetUserPassword(string userId, UserResetPasswordDTO userUpdateDTO);
+        Task UpdateUser(User user);
+        Task ResetUserPassword(User user, string newPassword);
         Task DeleteUser(string userId);
         Task<IEnumerable<Chat>> GetUserChats(string userId);
+        Task<IEnumerable<UserFollow>> GetUserFollowersForUser(string userId);
         Task<MemoryStream> ExportUsersToCsv();
     }
 }

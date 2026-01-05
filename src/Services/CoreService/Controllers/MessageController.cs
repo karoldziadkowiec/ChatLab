@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ChatLab.CoreService.Entities;
 using ChatLab.CoreService.Models.DTOs;
 using ChatLab.CoreService.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace ChatLab.CoreService.Controllers
 {
     [Route("api/messages")]
-    [Authorize(Policy = "AdminOrUserRights")]
     [ApiController]
     public class MessageController : ControllerBase
     {
@@ -21,6 +21,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/messages/:messageId
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("{messageId}")]
         public async Task<IActionResult> GetMessageById(int messageId)
         {
@@ -28,18 +29,22 @@ namespace ChatLab.CoreService.Controllers
             if (message == null)
                 return NotFound($"Message with ID {messageId} not found.");
 
-            return Ok(message);
+            var messageDto = _mapper.Map<MessageDTO>(message);
+            return Ok(messageDto);
         }
 
         // GET: api/messages
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet]
         public async Task<IActionResult> GetAllMessages()
         {
             var messages = await _messageService.GetAllMessages();
-            return Ok(messages);
+            var messageDtos = _mapper.Map<IEnumerable<MessageDTO>>(messages);
+            return Ok(messageDtos);
         }
 
         // GET: api/messages/count
+        [Authorize(Policy = "AdminRights")]
         [HttpGet("count")]
         public async Task<IActionResult> GetAllMessagesCount()
         {
@@ -48,14 +53,17 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/messages/chat/:chatId
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("chat/{chatId}")]
         public async Task<IActionResult> GetMessagesForChat(int chatId)
         {
             var messages = await _messageService.GetMessagesForChat(chatId);
-            return Ok(messages);
+            var messageDtos = _mapper.Map<IEnumerable<MessageDTO>>(messages);
+            return Ok(messageDtos);
         }
 
         // GET: api/messages/chat/:chatId/count
+        [Authorize(Policy = "AdminRights")]
         [HttpGet("chat/{chatId}/count")]
         public async Task<IActionResult> GetMessagesForChatCount(int chatId)
         {
@@ -64,6 +72,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/messages/chat/:chatId/last-message-date
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("chat/{chatId}/last-message-date")]
         public async Task<IActionResult> GetLastMessageDateForChat(int chatId)
         {
@@ -72,14 +81,16 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // POST: api/messages
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpPost]
-        public async Task<IActionResult> SendMessage([FromBody] MessageSendDTO dto)
+        public async Task<IActionResult> SendMessage([FromBody] MessageSendDTO messageDto)
         {
-            await _messageService.SendMessage(dto);
-            return Ok(dto);
+            await _messageService.SendMessage(messageDto);
+            return Ok(messageDto);
         }
 
         // DELETE: api/messages/:messageId
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpDelete("{messageId}")]
         public async Task<IActionResult> DeleteMessage(int messageId)
         {

@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace ChatLab.CoreService.Controllers
 {
     [Route("api/chats")]
-    [Authorize(Policy = "AdminOrUserRights")]
     [ApiController]
     public class ChatController : ControllerBase
     {
@@ -22,6 +21,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/chats/:chatId
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("{chatId}")]
         public async Task<IActionResult> GetChatById(int chatId)
         {
@@ -29,18 +29,22 @@ namespace ChatLab.CoreService.Controllers
             if (chat == null)
                 return NotFound($"Chat with ID {chatId} not found.");
 
-            return Ok(chat);
+            var chatDto = _mapper.Map<ChatDTO>(chat);
+            return Ok(chatDto);
         }
 
         // GET: api/chats
+        [Authorize(Policy = "AdminRights")]
         [HttpGet]
         public async Task<IActionResult> GetChats()
         {
             var chats = await _chatService.GetChats();
-            return Ok(chats);
+            var chatDtos = _mapper.Map<IEnumerable<ChatDTO>>(chats);
+            return Ok(chatDtos);
         }
 
         // GET: api/chats/count
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("count")]
         public async Task<IActionResult> GetChatCount()
         {
@@ -49,6 +53,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/chats/between/:user1Id/:user2Id
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("between/{user1Id}/{user2Id}")]
         public async Task<IActionResult> GetChatIdBetweenUsers(string user1Id, string user2Id)
         {
@@ -57,6 +62,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // POST: api/chats
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpPost]
         public async Task<IActionResult> CreateChat([FromBody] ChatCreateDTO dto)
         {
@@ -66,6 +72,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // DELETE: api/chats/:chatId
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpDelete("{chatId}")]
         public async Task<IActionResult> DeleteChat(int chatId)
         {
@@ -78,6 +85,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/chats/export
+        [Authorize(Policy = "AdminRights")]
         [HttpGet("export")]
         public async Task<IActionResult> ExportChatsToCsv()
         {

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Table, Button, Modal, Pagination, Form, Col, Row } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+import { RoutePaths } from '../../routes/RoutePaths';
 import AccountService from '../../services/api/AccountService';
 import Role from '../../models/enums/Role';
 import UserService from '../../services/api/UserService';
@@ -299,7 +300,7 @@ const AdminUsers = () => {
                 await ChatService.createChat(chatCreateDTO);
                 chatId = await ChatService.getChatIdBetweenUsers(userId, receiverId);
             }
-            navigate(`/chat/${chatId}`, { state: { chatId } });
+            navigate(RoutePaths.adminChat(chatId), { state: { chatId } });
         }
         catch (error) {
             console.error('Failed to open chat:', error);

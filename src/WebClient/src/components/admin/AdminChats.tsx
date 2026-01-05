@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Table, Button, Modal, Form, Pagination } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+import { RoutePaths } from '../../routes/RoutePaths';
 import TimeService from '../../services/time/TimeService';
 import ChatService from '../../services/api/ChatService';
 import MessageService from '../../services/api/MessageService';
@@ -73,7 +74,7 @@ const AdminChats = () => {
     };
 
     const moveToSpecificChatPage = (chatId: number) => {
-        navigate(`/admin/chat/${chatId}`, { state: { chatId } });
+        navigate(RoutePaths.adminChat(chatId), { state: { chatId } });
     };
 
     const handleShowDeleteChatRoomModal = (chatRoomId: number) => {
@@ -204,6 +205,7 @@ const AdminChats = () => {
                                         <Button variant="info" className="button-spacing" onClick={() => moveToSpecificChatPage(chat.id)}>
                                             <i className="bi bi-chat-fill"></i>
                                         </Button>
+                                        <span className="button-spacing">|</span>
                                         <Button variant="danger" onClick={() => handleShowDeleteChatRoomModal(chat.id)}>
                                             <i className="bi bi-trash"></i>
                                         </Button>

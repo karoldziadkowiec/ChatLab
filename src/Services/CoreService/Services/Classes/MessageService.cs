@@ -66,14 +66,14 @@ namespace ChatLab.CoreService.Services.Classes
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<Message> SendMessage(MessageSendDTO dto)
+        public async Task<Message> SendMessage(MessageSendDTO messageDto)
         {
             var message = new Message
             {
-                ChatId = dto.ChatId,
-                SenderId = dto.SenderId,
-                ReceiverId = dto.ReceiverId,
-                Content = dto.Content,
+                ChatId = messageDto.ChatId,
+                SenderId = messageDto.SenderId,
+                ReceiverId = messageDto.ReceiverId,
+                Content = messageDto.Content,
                 Timestamp = DateTime.Now
             };
 

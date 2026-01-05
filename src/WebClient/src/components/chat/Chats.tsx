@@ -61,7 +61,7 @@ const Chats = () => {
         setLastMessageDates(dates);
     };
 
-    const moveToSpecificChatPage = (chatId: number) => {
+    const moveToSpecificChatSingnalRPage = (chatId: number) => {
         navigate(RoutePaths.chatSignalR(chatId), { state: { chatId } });
     };
 
@@ -131,7 +131,7 @@ const Chats = () => {
                                         {TimeService.formatDateToEURWithHour(lastMessageDates.get(chat.id) || '') || 'No messages'}
                                     </td>
                                     <td className="chat-room-row">
-                                        <Button variant="info" className="button-spacing" onClick={() => moveToSpecificChatPage(chat.id)}>
+                                        <Button variant="info" className="button-spacing" onClick={() => moveToSpecificChatSingnalRPage(chat.id)}>
                                             <i className="bi bi-chat-fill"></i>
                                             SignalR
                                         </Button>
@@ -147,6 +147,7 @@ const Chats = () => {
                                             <i className="bi bi-chat-fill"></i>
                                             SSE
                                         </Button>
+                                        <span className="button-spacing">|</span>
                                         <Button variant="danger" onClick={() => handleShowDeleteChatRoomModal(chat.id)}>
                                             <i className="bi bi-trash"></i>
                                         </Button>

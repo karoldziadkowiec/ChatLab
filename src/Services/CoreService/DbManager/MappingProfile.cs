@@ -12,19 +12,17 @@ namespace ChatLab.CoreService.DbManager
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.CreationDate, opt => opt.MapFrom(src => DateTime.Now))
                 .ForMember(dest => dest.SecurityStamp, opt => opt.MapFrom(src => Guid.NewGuid().ToString()));
-            CreateMap<User, UserDTO>();
-            CreateMap<UserDTO, User>();
-            CreateMap<User, UserUpdateDTO>();
-            CreateMap<UserUpdateDTO, User>();
-            CreateMap<User, UserResetPasswordDTO>();
-            CreateMap<UserResetPasswordDTO, User>();
-            CreateMap<Problem, ProblemCreateDTO>();
-            CreateMap<ProblemCreateDTO, Problem>();
-            // Chat
-            CreateMap<Chat, ChatCreateDTO>();
-            CreateMap<ChatCreateDTO, Chat>();
-            CreateMap<Message, MessageSendDTO>();
-            CreateMap<MessageSendDTO, Message>();
+            CreateMap<User, UserDTO>().ReverseMap();
+            CreateMap<User, UserUpdateDTO>().ReverseMap();
+            CreateMap<User, UserResetPasswordDTO>().ReverseMap();
+            CreateMap<Problem, ProblemDTO>().ReverseMap();
+            CreateMap<Problem, ProblemCreateDTO>().ReverseMap();
+            CreateMap<UserFollow, UserFollowDTO>().ReverseMap();
+            CreateMap<UserFollow, UserFollowCreateDTO>().ReverseMap();
+            CreateMap<Chat, ChatDTO>().ReverseMap();
+            CreateMap<Chat, ChatCreateDTO>().ReverseMap();
+            CreateMap<Message, MessageDTO>().ReverseMap();
+            CreateMap<Message, MessageSendDTO>().ReverseMap();
         }
     }
 }

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, Button, Modal, Form, Tabs, Tab } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+import { RoutePaths } from '../../routes/RoutePaths';
 import AccountService from '../../services/api/AccountService';
 import TimeService from '../../services/time/TimeService';
 import ProblemService from '../../services/api/ProblemService';
@@ -115,7 +116,7 @@ const AdminSupport = () => {
                 await ChatService.createChat(chatCreateDTO);
                 chatId = await ChatService.getChatIdBetweenUsers(userId, receiverId);
             }
-            navigate(`/chat/${chatId}`, { state: { chatId } });
+            navigate(RoutePaths.chatSignalR(chatId), { state: { chatId } });
         }
         catch (error) {
             console.error('Failed to open chat:', error);

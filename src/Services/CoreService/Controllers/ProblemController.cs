@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace ChatLab.CoreService.Controllers
 {
     [Route("api/problems")]
-    [Authorize(Policy = "AdminOrUserRights")]
     [ApiController]
     public class ProblemController : ControllerBase
     {
@@ -22,33 +21,40 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/problems/:problemId
+        [Authorize(Policy = "AdminRights")]
         [HttpGet("{problemId}")]
-        public async Task<ActionResult<Problem>> GetProblem(int problemId)
+        public async Task<ActionResult<ProblemDTO>> GetProblem(int problemId)
         {
             var problem = await _problemRepository.GetProblem(problemId);
             if (problem == null)
                 return NotFound();
 
-            return Ok(problem);
+            var problemDto = _mapper.Map<ProblemDTO>(problem);
+            return Ok(problemDto);
         }
 
         // GET: api/problems
+        [Authorize(Policy = "AdminRights")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Problem>>> GetAllProblems()
+        public async Task<ActionResult<IEnumerable<ProblemDTO>>> GetAllProblems()
         {
             var problems = await _problemRepository.GetAllProblems();
-            return Ok(problems);
+            var problemDtos = _mapper.Map<IEnumerable<ProblemDTO>>(problems);
+            return Ok(problemDtos);
         }
 
         // GET: api/problems/solved
+        [Authorize(Policy = "AdminRights")]
         [HttpGet("solved")]
-        public async Task<ActionResult<IEnumerable<Problem>>> GetSolvedProblems()
+        public async Task<ActionResult<IEnumerable<ProblemDTO>>> GetSolvedProblems()
         {
-            var solvedProblemss = await _problemRepository.GetSolvedProblems();
-            return Ok(solvedProblemss);
+            var solvedProblems = await _problemRepository.GetSolvedProblems();
+            var solvedProblemsDtos = _mapper.Map<IEnumerable<ProblemDTO>>(solvedProblems);
+            return Ok(solvedProblemsDtos);
         }
 
         // GET: api/problems/solved/count
+        [Authorize(Policy = "AdminRights")]
         [HttpGet("solved/count")]
         public async Task<IActionResult> GetSolvedProblemCount()
         {
@@ -57,14 +63,17 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/problems/unsolved
+        [Authorize(Policy = "AdminRights")]
         [HttpGet("unsolved")]
-        public async Task<ActionResult<IEnumerable<Problem>>> GetUnsolvedProblems()
+        public async Task<ActionResult<IEnumerable<ProblemDTO>>> GetUnsolvedProblems()
         {
-            var unsolvedProblemss = await _problemRepository.GetUnsolvedProblems();
-            return Ok(unsolvedProblemss);
+            var unsolvedProblems = await _problemRepository.GetUnsolvedProblems();
+            var unsolvedProblemsDtos = _mapper.Map<IEnumerable<ProblemDTO>>(unsolvedProblems);
+            return Ok(unsolvedProblemsDtos);
         }
 
         // GET: api/problems/unsolved/count
+        [Authorize(Policy = "AdminRights")]
         [HttpGet("unsolved/count")]
         public async Task<IActionResult> GetUnsolvedProblemCount()
         {
@@ -73,6 +82,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // POST: api/problems
+        [Authorize(Policy = "AdminOrUserRights")]
         [HttpPost]
         public async Task<ActionResult> CreateProblem([FromBody] ProblemCreateDTO dto)
         {
@@ -82,24 +92,28 @@ namespace ChatLab.CoreService.Controllers
             var problem = _mapper.Map<Problem>(dto);
             await _problemRepository.CreateProblem(problem);
 
-            return Ok(problem);
+            var createdDto = _mapper.Map<ProblemDTO>(problem);
+            return Ok(createdDto);
         }
 
         // PUT: api/problems/:problemId
+        [Authorize(Policy = "AdminRights")]
         [HttpPut("{problemId}")]
-        public async Task<ActionResult> CheckProblemSolved(int problemId, [FromBody] Problem problem)
+        public async Task<IActionResult> CheckProblemSolved(int problemId, [FromBody] ProblemDTO dto)
         {
-            if (problemId != problem.Id)
+            if (problemId != dto.Id)
                 return BadRequest();
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            await _problemRepository.CheckProblemSolved(problem);
+            var entity = _mapper.Map<Problem>(dto);
+            await _problemRepository.CheckProblemSolved(entity);
             return NoContent();
         }
 
         // GET: api/problems/export
+        [Authorize(Policy = "AdminRights")]
         [HttpGet("export")]
         public async Task<IActionResult> ExportProblemsToCsv()
         {

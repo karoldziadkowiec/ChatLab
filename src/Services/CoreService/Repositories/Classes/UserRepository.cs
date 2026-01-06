@@ -152,15 +152,6 @@ namespace ChatLab.CoreService.Repositories.Classes
                 .ToList();
         }
 
-        public async Task<IEnumerable<UserFollow>> GetUserFollowersForUser(string userId)
-        {
-            return await _dbContext.UserFollowers
-                .Include(f => f.Follower)
-                .Include(f => f.Followed)
-                .Where(f => f.FollowerId == userId || f.FollowedId == userId)
-                .ToListAsync();
-        }
-
         public async Task<MemoryStream> ExportUsersToCsv()
         {
             var users = await GetUsers();

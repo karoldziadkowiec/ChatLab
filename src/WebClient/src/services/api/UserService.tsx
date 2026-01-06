@@ -5,7 +5,6 @@ import UserDTO from '../../models/dtos/UserDTO';
 import UserUpdateDTO from '../../models/dtos/UserUpdateDTO';
 import UserResetPasswordDTO from '../../models/dtos/UserResetPasswordDTO';
 import ChatModel from '../../models/interfaces/Chat';
-import UserFollow from '../../models/interfaces/UserFollow';
 
 const UserService = {
   async getUser(userId: string): Promise<UserDTO> {
@@ -207,27 +206,6 @@ const UserService = {
     catch (error) {
       if (axios.isAxiosError(error)) {
         console.error("Error fetching user's chats, details:", error.response?.data || error.message);
-      }
-      else {
-        console.error('Unexpected error:', error);
-      }
-      throw error;
-    }
-  },
-
-  async getUserFollowersForUser(userId: string): Promise<UserFollow[]> {
-    try {
-      const authorizationHeader = await AccountService.getAuthorizationHeader();
-      const response = await axios.get<UserFollow[]>(`${ApiURL}/users/${userId}/user-followers`, {
-        headers: {
-          'Authorization': authorizationHeader
-        }
-      });
-      return response.data;
-    }
-    catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("Error fetching user's user followers, details:", error.response?.data || error.message);
       }
       else {
         console.error('Unexpected error:', error);

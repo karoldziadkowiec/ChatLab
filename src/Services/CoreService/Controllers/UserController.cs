@@ -166,16 +166,6 @@ namespace ChatLab.CoreService.Controllers
             return Ok(userChatsDtos);
         }
 
-        // GET: api/users/:userId/user-followers
-        [Authorize(Policy = "AdminOrUserRights")]
-        [HttpGet("{userId}/user-followers")]
-        public async Task<ActionResult<IEnumerable<UserFollow>>> GetUserFollowersForUser(string userId)
-        {
-            var userFollowers = await _userRepository.GetUserFollowersForUser(userId);
-            var userFollowDtos = _mapper.Map<IEnumerable<UserFollowDTO>>(userFollowers);
-            return Ok(userFollowDtos);
-        }
-
         // GET: api/users/export
         [Authorize(Policy = "AdminRights")]
         [HttpGet("export")]

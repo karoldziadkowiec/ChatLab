@@ -35,6 +35,34 @@ namespace ChatLab.CoreService.Services.Classes
             return await _dbContext.UserFollowers.CountAsync();
         }
 
+        public async Task<IEnumerable<UserFollow>> GetUserFollowedForUser(string userId)
+        {
+            return await _dbContext.UserFollowers
+                .Include(f => f.Follower)
+                .Include(f => f.Followed)
+                .Where(f => f.FollowerId == userId)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetUserFollowedForUserCount(string userId)
+        {
+            return await _dbContext.UserFollowers.Where(f => f.FollowerId == userId).CountAsync();
+        }
+
+        public async Task<IEnumerable<UserFollow>> GetUserFollowersForUser(string userId)
+        {
+            return await _dbContext.UserFollowers
+                .Include(f => f.Follower)
+                .Include(f => f.Followed)
+                .Where(f => f.FollowedId == userId)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetUserFollowersForUserCount(string userId)
+        {
+            return await _dbContext.UserFollowers.Where(f => f.FollowedId == userId).CountAsync();
+        }
+
         public async Task<int> GetUserFollowIdBetweenUsers(string followerId, string followedId)
         {
             var userFollowId = await _dbContext.UserFollowers

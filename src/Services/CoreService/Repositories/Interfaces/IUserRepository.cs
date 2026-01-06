@@ -15,7 +15,6 @@ namespace ChatLab.CoreService.Repositories.Interfaces
         Task ResetUserPassword(User user, string newPassword);
         Task DeleteUser(string userId);
         Task<IEnumerable<Chat>> GetUserChats(string userId);
-        Task<IEnumerable<UserFollow>> GetUserFollowersForUser(string userId);
         Task<MemoryStream> ExportUsersToCsv();
     }
 }

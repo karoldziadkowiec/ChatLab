@@ -52,6 +52,44 @@ namespace ChatLab.CoreService.Controllers
             return Ok(count);
         }
 
+        // GET: api/user-followers/followed/:userId
+        [Authorize(Policy = "AdminOrUserRights")]
+        [HttpGet("followed/{userId}")]
+        public async Task<ActionResult<IEnumerable<UserFollow>>> GetUserFollowedForUser(string userId)
+        {
+            var userFollowed = await _userFollowRepository.GetUserFollowedForUser(userId);
+            var userFollowedDtos = _mapper.Map<IEnumerable<UserFollowDTO>>(userFollowed);
+            return Ok(userFollowedDtos);
+        }
+
+        // GET: api/user-followers/followed/count/:userId
+        [Authorize(Policy = "AdminOrUserRights")]
+        [HttpGet("followed/count/{userId}")]
+        public async Task<IActionResult> GetUserFollowedForUserCount(string userId)
+        {
+            int count = await _userFollowRepository.GetUserFollowedForUserCount(userId);
+            return Ok(count);
+        }
+
+        // GET: api/user-followers/followers/:userId
+        [Authorize(Policy = "AdminOrUserRights")]
+        [HttpGet("followers/{userId}")]
+        public async Task<ActionResult<IEnumerable<UserFollow>>> GetUserFollowersForUser(string userId)
+        {
+            var userFollowers = await _userFollowRepository.GetUserFollowersForUser(userId);
+            var userFollowersDtos = _mapper.Map<IEnumerable<UserFollowDTO>>(userFollowers);
+            return Ok(userFollowersDtos);
+        }
+
+        // GET: api/user-followers/followers/count/:userId
+        [Authorize(Policy = "AdminOrUserRights")]
+        [HttpGet("followers/count/{userId}")]
+        public async Task<IActionResult> GetUserFollowersForUserCount(string userId)
+        {
+            int count = await _userFollowRepository.GetUserFollowersForUserCount(userId);
+            return Ok(count);
+        }
+
         // GET: api/user-followers/between/:followerId/:followedId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("between/{followerId}/{followedId}")]

@@ -33,3 +33,50 @@
         min-width: 100%;
     }
 }
+
+.name-label {
+    color: rgb(44, 127, 200);
+    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.info-section {
+    color: rgb(23, 168, 208);
+    font-family:'Times New Roman', Times, serif;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.pagination-bluee {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.pagination-bluee .page-item {
+    margin: 2px;
+}
+
+.pagination-bluee .page-item .page-link {
+    background-color: rgb(93, 211, 235);
+    border-color: rgb(93, 211, 235);
+    color: #fff;
+}
+
+.pagination-bluee .page-item.active .page-link {
+    background-color: rgb(26, 113, 130);
+    border-color: rgb(26, 113, 130);
+}
+
+.pagination-bluee .page-item .page-link:hover {
+    background-color: rgb(54, 158, 179);
+    border-color: rgb(54, 158, 179);
+}

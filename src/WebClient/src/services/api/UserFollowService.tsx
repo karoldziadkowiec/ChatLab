@@ -68,6 +68,90 @@ const UserFollowService = {
         }
     },
 
+    async getUserFollowedForUser(userId: string): Promise<UserFollow[]> {
+        try {
+        const authorizationHeader = await AccountService.getAuthorizationHeader();
+        const response = await axios.get<UserFollow[]>(`${ApiURL}/user-followers/followed/${userId}`, {
+            headers: {
+            'Authorization': authorizationHeader
+            }
+        });
+        return response.data;
+        }
+        catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error("Error fetching user's user followed, details:", error.response?.data || error.message);
+        }
+        else {
+            console.error('Unexpected error:', error);
+        }
+        throw error;
+        }
+    },
+
+    async getUserFollowedForUserCount(userId: string): Promise<number> {
+        try {
+            const authorizationHeader = await AccountService.getAuthorizationHeader();
+            const response = await axios.get<number>(`${ApiURL}/user-followers/followed/count/${userId}`, {
+                headers: {
+                    'Authorization': authorizationHeader
+                }
+            });
+            return response.data;
+        }
+        catch (error) {
+            if (axios.isAxiosError(error)) {
+                console.error('Error fetching user followed for user count, details:', error.response?.data || error.message);
+            }
+            else {
+                console.error('Unexpected error:', error);
+            }
+            throw error;
+        }
+    },
+
+    async getUserFollowersForUser(userId: string): Promise<UserFollow[]> {
+        try {
+        const authorizationHeader = await AccountService.getAuthorizationHeader();
+        const response = await axios.get<UserFollow[]>(`${ApiURL}/user-followers/followers/${userId}`, {
+            headers: {
+            'Authorization': authorizationHeader
+            }
+        });
+        return response.data;
+        }
+        catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error("Error fetching user's user followers, details:", error.response?.data || error.message);
+        }
+        else {
+            console.error('Unexpected error:', error);
+        }
+        throw error;
+        }
+    },
+
+    async getUserFollowersForUserCount(userId: string): Promise<number> {
+        try {
+            const authorizationHeader = await AccountService.getAuthorizationHeader();
+            const response = await axios.get<number>(`${ApiURL}/user-followers/followers/count/${userId}`, {
+                headers: {
+                    'Authorization': authorizationHeader
+                }
+            });
+            return response.data;
+        }
+        catch (error) {
+            if (axios.isAxiosError(error)) {
+                console.error('Error fetching user followers for user count, details:', error.response?.data || error.message);
+            }
+            else {
+                console.error('Unexpected error:', error);
+            }
+            throw error;
+        }
+    },
+
     async getUserFollowIdBetweenUsers(followerId: string, followedId: string): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ChatLab.CoreService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260105191126_New-schema-migration")]
-    partial class Newschemamigration
+    [Migration("20260107174351_Schema migration")]
+    partial class Schemamigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -50,6 +50,24 @@ namespace ChatLab.CoreService.Migrations
                     b.ToTable("Chats");
                 });
 
+            modelBuilder.Entity("ChatLab.CoreService.Entities.CommunicationTechnology", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CommunicationTechnologies");
+                });
+
             modelBuilder.Entity("ChatLab.CoreService.Entities.Message", b =>
                 {
                     b.Property<int>("Id")
@@ -59,6 +77,9 @@ namespace ChatLab.CoreService.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ChatId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CommunicationTechnologyId")
                         .HasColumnType("int");
 
                     b.Property<string>("Content")
@@ -80,6 +101,8 @@ namespace ChatLab.CoreService.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ChatId");
+
+                    b.HasIndex("CommunicationTechnologyId");
 
                     b.HasIndex("ReceiverId");
 
@@ -392,6 +415,12 @@ namespace ChatLab.CoreService.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ChatLab.CoreService.Entities.CommunicationTechnology", "CommunicationTechnology")
+                        .WithMany()
+                        .HasForeignKey("CommunicationTechnologyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("ChatLab.CoreService.Entities.User", "Receiver")
                         .WithMany()
                         .HasForeignKey("ReceiverId")
@@ -405,6 +434,8 @@ namespace ChatLab.CoreService.Migrations
                         .IsRequired();
 
                     b.Navigation("Chat");
+
+                    b.Navigation("CommunicationTechnology");
 
                     b.Navigation("Receiver");
 

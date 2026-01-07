@@ -27,6 +27,7 @@ const AdminNavbarComponent = () => {
             </NavDropdown>
             <NavDropdown title={<><i className="bi bi-gear-fill"></i> Service</>} id="basic-nav-dropdown">
               <NavDropdown.Item as={NavLink} to={RoutePaths.adminSupport()}><i className="bi bi-cone-striped"></i> Reported Problems</NavDropdown.Item>
+              <NavDropdown.Item as={NavLink} to={RoutePaths.adminCommunicationTechnologies()}><i className="bi bi-tools"></i> Communication Technologies</NavDropdown.Item>
               <NavDropdown.Item as={NavLink} to={RoutePaths.adminMakeAnAdmin()}><i className="bi bi-universal-access-circle"></i> Make an Admin</NavDropdown.Item>
             </NavDropdown>
           </Nav>

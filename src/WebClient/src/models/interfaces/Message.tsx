@@ -1,5 +1,6 @@
 import UserDTO from '../dtos/UserDTO';
 import Chat from './Chat';
+import CommunicationTechnology from './CommunicationTechnology';
 
 interface Message {
     id: number; 
@@ -10,6 +11,8 @@ interface Message {
     sender: UserDTO;
     receiverId: string;
     receiver: UserDTO;
+    communicationTechnologyId: number;
+    communicationTechnology: CommunicationTechnology;
     timestamp: string;
 }
 

@@ -1,0 +1,31 @@
+.AdminCommunicationTechnologies {
+    text-align: center;
+    background-color: rgb(240, 247, 240);
+    padding: 20px 30% 20px 30%;
+}
+
+.modal-content-centered {
+    text-align: center;
+    margin: 0 auto;
+}
+
+.button-spacing {
+    margin-right: 10px;
+}
+
+/* Responsive Table */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+    min-width: 600px;
+}
+
+/* Mobile Specific Styles */
+@media (max-width: 576px) {
+    .table-responsive table {
+        min-width: 100%;
+    }
+}

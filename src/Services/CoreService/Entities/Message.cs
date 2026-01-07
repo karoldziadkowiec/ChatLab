@@ -29,6 +29,11 @@ namespace ChatLab.CoreService.Entities
 
         [ForeignKey("ReceiverId")]
         public virtual User Receiver { get; set; }
+        [Required]
+        public int CommunicationTechnologyId { get; set; }
+
+        [ForeignKey("CommunicationTechnologyId ")]
+        public virtual CommunicationTechnology CommunicationTechnology { get; set; }
 
         [Required]
         [DataType(DataType.DateTime)]

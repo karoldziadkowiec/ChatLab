@@ -8,6 +8,7 @@ namespace ChatLab.CoreService.DbManager
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
         public DbSet<Chat> Chats { get; set; }
+        public DbSet<CommunicationTechnology> CommunicationTechnologies { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Problem> Problems { get; set; }
         public DbSet<UserFollow> UserFollowers { get; set; }
@@ -44,6 +45,12 @@ namespace ChatLab.CoreService.DbManager
                 .HasOne(m => m.Receiver)
                 .WithMany()
                 .HasForeignKey(m => m.ReceiverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Message>()
+                .HasOne(m => m.CommunicationTechnology)
+                .WithMany()
+                .HasForeignKey(m => m.CommunicationTechnologyId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Problem>()

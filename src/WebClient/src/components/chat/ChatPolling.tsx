@@ -8,6 +8,8 @@ import AccountService from '../../services/api/AccountService';
 import TimeService from '../../services/time/TimeService';
 import ChatService from '../../services/api/ChatService';
 import MessageService from '../../services/api/MessageService';
+import CommunicationTechnologyService from '../../services/api/CommunicationTechnologyService';
+import CommunicationTechnologyConst from "../../models/enums/CommunicationTechnologyConst";
 import ChatPollingHub from '../../services/chatPolling/ChatHub';
 import ChatModel from '../../models/interfaces/Chat';
 import Message from '../../models/interfaces/Message';
@@ -17,6 +19,8 @@ import '../../App.css';
 import '../../styles/chat/Chat.css';
 
 const Chat = () => {
+    const [technologyName, setTechnologyName] = useState<string | null>(null);
+    const [technologyId, setTechnologyId] = useState<number | null>(null);
     const { id } = useParams();
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | null>(null);
@@ -57,6 +61,15 @@ const Chat = () => {
 
                 const _messages = await MessageService.getMessagesForChat(chatId);
                 setMessages(_messages);
+
+                const techName = CommunicationTechnologyConst.Polling;
+                setTechnologyName(techName);
+                try {
+                    const _technologyId = await CommunicationTechnologyService.getCommunicationTechnologyId(techName);
+                    setTechnologyId(_technologyId);
+                } catch (e) {
+                    console.error('Failed to resolve communication technology id:', e);
+                }
             } catch (error) {
                 console.error('Failed to fetch chat data:', error);
                 toast.error('Failed to load chat data.');
@@ -111,13 +124,14 @@ const Chat = () => {
     }
 
     try {
-        if (chatData?.id && user?.id && receiver?.id) {
+        if (chatData?.id && user?.id && receiver?.id && technologyId) {
             const startTime = performance.now();
 
             const messageSendDTO: MessageSendDTO = {
                 chatId: chatData.id,
                 senderId: user.id,
                 receiverId: receiver.id,
+                communicationTechnologyId: technologyId,
                 content: newMessage
             };
 
@@ -215,7 +229,7 @@ const Chat = () => {
                                         </Col>
                                         <Col xs="auto">
                                             <div className="message-timestamp">
-                                                {TimeService.formatDateToEURWithHour(message.timestamp)}
+                                                {TimeService.formatDateToEURWithHour(message.timestamp)} ({message.communicationTechnology.name})
                                             </div>
                                         </Col>
                                         <Col xs="auto">

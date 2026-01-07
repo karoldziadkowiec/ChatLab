@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ChatLab.CoreService.Migrations
 {
     /// <inheritdoc />
-    public partial class Newschemamigration : Migration
+    public partial class Schemamigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -52,6 +52,19 @@ namespace ChatLab.CoreService.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CommunicationTechnologies",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CommunicationTechnologies", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -245,6 +258,7 @@ namespace ChatLab.CoreService.Migrations
                     Content = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     SenderId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     ReceiverId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CommunicationTechnologyId = table.Column<int>(type: "int", nullable: false),
                     Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
@@ -266,6 +280,12 @@ namespace ChatLab.CoreService.Migrations
                         name: "FK_Messages_Chats_ChatId",
                         column: x => x.ChatId,
                         principalTable: "Chats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Messages_CommunicationTechnologies_CommunicationTechnologyId",
+                        column: x => x.CommunicationTechnologyId,
+                        principalTable: "CommunicationTechnologies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -325,6 +345,11 @@ namespace ChatLab.CoreService.Migrations
                 column: "ChatId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Messages_CommunicationTechnologyId",
+                table: "Messages",
+                column: "CommunicationTechnologyId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Messages_ReceiverId",
                 table: "Messages",
                 column: "ReceiverId");
@@ -382,6 +407,9 @@ namespace ChatLab.CoreService.Migrations
 
             migrationBuilder.DropTable(
                 name: "Chats");
+
+            migrationBuilder.DropTable(
+                name: "CommunicationTechnologies");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

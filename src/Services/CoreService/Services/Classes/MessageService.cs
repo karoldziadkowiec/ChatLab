@@ -21,6 +21,7 @@ namespace ChatLab.CoreService.Services.Classes
                 .Include(m => m.Chat)
                 .Include(m => m.Sender)
                 .Include(m => m.Receiver)
+                .Include(m => m.CommunicationTechnology)
                 .FirstOrDefaultAsync(m => m.Id == messageId);
         }
 
@@ -30,6 +31,7 @@ namespace ChatLab.CoreService.Services.Classes
                 .Include(m => m.Chat)
                 .Include(m => m.Sender)
                 .Include(m => m.Receiver)
+                .Include(m => m.CommunicationTechnology)
                 .OrderBy(m => m.Timestamp)
                 .ToListAsync();
         }
@@ -45,6 +47,7 @@ namespace ChatLab.CoreService.Services.Classes
                 .Include(m => m.Chat)
                 .Include(m => m.Sender)
                 .Include(m => m.Receiver)
+                .Include(m => m.CommunicationTechnology)
                 .Where(m => m.ChatId == chatId)
                 .OrderBy(m => m.Timestamp)
                 .ToListAsync();
@@ -74,6 +77,7 @@ namespace ChatLab.CoreService.Services.Classes
                 SenderId = messageDto.SenderId,
                 ReceiverId = messageDto.ReceiverId,
                 Content = messageDto.Content,
+                CommunicationTechnologyId = messageDto.CommunicationTechnologyId,
                 Timestamp = DateTime.Now
             };
 

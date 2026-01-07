@@ -7,15 +7,13 @@ using ChatLab.CoreService.Services.Interfaces;
 public class ChatWebSocketHandler
 {
     private readonly WebSocketConnectionManager _connections;
-    private readonly IChatService _chatService;
     private readonly IMessageService _messageService;
     private readonly ILogger<ChatWebSocketHandler> _logger;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public ChatWebSocketHandler(WebSocketConnectionManager connections, IChatService chatService, IMessageService messageService, ILogger<ChatWebSocketHandler> logger)
+    public ChatWebSocketHandler(WebSocketConnectionManager connections, IMessageService messageService, ILogger<ChatWebSocketHandler> logger)
     {
         _connections = connections;
-        _chatService = chatService;
         _messageService = messageService;
         _logger = logger;
     }

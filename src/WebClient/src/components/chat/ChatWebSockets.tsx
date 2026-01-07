@@ -8,7 +8,9 @@ import AccountService from "../../services/api/AccountService";
 import TimeService from "../../services/time/TimeService";
 import ChatService from "../../services/api/ChatService";
 import MessageService from "../../services/api/MessageService";
+import CommunicationTechnologyService from '../../services/api/CommunicationTechnologyService';
 import ChatWebSocket from "../../services/chatWebSockets/ChatHub";
+import CommunicationTechnologyConst from "../../models/enums/CommunicationTechnologyConst";
 import Chat from "../../models/interfaces/Chat";
 import Message from "../../models/interfaces/Message";
 import UserDTO from "../../models/dtos/UserDTO";
@@ -17,9 +19,10 @@ import '../../App.css';
 import "../../styles/chat/Chat.css";
 
 const ChatWebSockets = () => {
+    const [technologyName, setTechnologyName] = useState<string | null>(null);
+    const [technologyId, setTechnologyId] = useState<number | null>(null);
     const { id } = useParams();
     const navigate = useNavigate();
-
     const [userId, setUserId] = useState<string | null>(null);
     const [chatData, setChatData] = useState<Chat | null>(null);
     const [user, setUser] = useState<UserDTO | null>(null);
@@ -34,13 +37,13 @@ const ChatWebSockets = () => {
     const [showDeleteMessageModal, setShowDeleteMessageModal] = useState(false);
     const [deleteMessageId, setDeleteMessageId] = useState<number | null>(null);
 
-
     // Load user + chat metadata
     useEffect(() => {
         const load = async () => {
             try {
                 const _userId = await AccountService.getId();
-                if (_userId) setUserId(_userId);
+                if (_userId)
+                    setUserId(_userId);
 
                 if (id) {
                     const chat = await ChatService.getChatById(Number(id));
@@ -56,6 +59,15 @@ const ChatWebSockets = () => {
 
                     const msgs = await MessageService.getMessagesForChat(Number(id));
                     setMessages(msgs);
+
+                    const techName = CommunicationTechnologyConst.WebSockets;
+                    setTechnologyName(techName);
+                    try {
+                        const _technologyId = await CommunicationTechnologyService.getCommunicationTechnologyId(techName);
+                        setTechnologyId(_technologyId);
+                    } catch (e) {
+                        console.error('Failed to resolve communication technology id:', e);
+                    }
                 }
             } catch (error) {
                 toast.error("Failed to load chat data");
@@ -94,13 +106,14 @@ const ChatWebSockets = () => {
         }
 
         try {
-            if (chatData?.id && user?.id && receiver?.id) {
+            if (chatData?.id && user?.id && receiver?.id && technologyId) {
                 const startTime = performance.now();
                 
                 const messageSendDTO: MessageSendDTO = {
                     chatId: chatData.id,
                     senderId: user.id,
                     receiverId: receiver.id,
+                    communicationTechnologyId: technologyId,
                     content: newMessage
                 };
 
@@ -201,7 +214,7 @@ const ChatWebSockets = () => {
                                         </Col>
                                         <Col xs="auto">
                                             <div className="message-timestamp">
-                                                {TimeService.formatDateToEURWithHour(message.timestamp)}
+                                                {TimeService.formatDateToEURWithHour(message.timestamp)} ({message.communicationTechnology.name})
                                             </div>
                                         </Col>
                                         <Col xs="auto">

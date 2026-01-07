@@ -9,7 +9,7 @@ export const RoutePaths = {
   home: (): string => "/home",
   myProfile: (): string => "/my-profile",
   chats: (): string => "/chats",
-  chatSignalR: (id: Id): string => `/chat/${id}`,
+  chatSignalR: (id: Id): string => `/chatSignalR/${id}`,
   chatWS: (id: Id): string => `/chatWS/${id}`,
   chatPolling: (id: Id): string => `/chatPolling/${id}`,
   chatSSE: (id: Id): string => `/chatSSE/${id}`,
@@ -23,6 +23,7 @@ export const RoutePaths = {
   adminChats: (): string => "/admin/chats",
   adminChat: (id: Id): string => `/admin/chat/${id}`,
   adminSupport: (): string => "/admin/support",
+  adminCommunicationTechnologies: (): string => "/admin/communication-technologies",
   adminMakeAnAdmin: (): string => "/admin/make-admin",
   adminRaportsUsers: (): string => "/admin/raports/users",
   adminRaportsChats: (): string => "/admin/raports/chats",
@@ -30,7 +31,7 @@ export const RoutePaths = {
 
 // Route patterns for react-router route declarations (with params)
 export const RoutePatterns = {
-  chatSignalR: "/chat/:id",
+  chatSignalR: "/chatSignalR/:id",
   chatWS: "/chatWS/:id",
   chatPolling: "/chatPolling/:id",
   chatSSE: "/chatSSE/:id",

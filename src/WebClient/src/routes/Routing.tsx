@@ -17,6 +17,7 @@ import AdminUsers from '../components/admin/AdminUsers';
 import AdminChats from '../components/admin/AdminChats';
 import AdminChat from '../components/admin/AdminChat';
 import AdminSupport from '../components/admin/AdminSupport';
+import AdminCommunicationTechnologies from '../components/admin/AdminCommunicationTechnologies';
 import AdminMakeAnAdmin from '../components/admin/AdminMakeAnAdmin';
 import AdminRaportsUsers from '../components/admin/AdminRaportsUsers';
 import AdminRaportsChats from '../components/admin/AdminRaportsChats';
@@ -47,6 +48,7 @@ const Routing = () => {
         <Route path={RoutePaths.adminChats()} element={<ProtectedRoute element={<DynamicNavbar><AdminChats /></DynamicNavbar>} allowedRoles={[Role.Admin]} />} />
         <Route path={RoutePatterns.adminChat} element={<ProtectedRoute element={<DynamicNavbar><AdminChat /></DynamicNavbar>} allowedRoles={[Role.Admin]} />} />
         <Route path={RoutePaths.adminSupport()} element={<ProtectedRoute element={<DynamicNavbar><AdminSupport /></DynamicNavbar>} allowedRoles={[Role.Admin]} />} />
+        <Route path={RoutePaths.adminCommunicationTechnologies()} element={<ProtectedRoute element={<DynamicNavbar><AdminCommunicationTechnologies /></DynamicNavbar>} allowedRoles={[Role.Admin]} />} />
         <Route path={RoutePaths.adminMakeAnAdmin()} element={<ProtectedRoute element={<DynamicNavbar><AdminMakeAnAdmin /></DynamicNavbar>} allowedRoles={[Role.Admin]} />} />
         <Route path={RoutePaths.adminRaportsUsers()} element={<ProtectedRoute element={<DynamicNavbar><AdminRaportsUsers /></DynamicNavbar>} allowedRoles={[Role.Admin]} />} />
         <Route path={RoutePaths.adminRaportsChats()} element={<ProtectedRoute element={<DynamicNavbar><AdminRaportsChats /></DynamicNavbar>} allowedRoles={[Role.Admin]} />} />

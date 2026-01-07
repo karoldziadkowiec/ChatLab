@@ -1,6 +1,7 @@
 ﻿using ChatLab.CoreService.Entities;
 using ChatLab.CoreService.Models.Constants;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChatLab.CoreService.DbManager
 {
@@ -13,6 +14,7 @@ namespace ChatLab.CoreService.DbManager
                 await SeedRoles(services);
                 await SeedAdminRole(services);
                 await SeedUnknownUser(services);
+                await SeedCommunicationTechnologies(services, dbContext);
             }
         }
 
@@ -90,6 +92,24 @@ namespace ChatLab.CoreService.DbManager
                 await userManager.CreateAsync(unknownUser, unknownUserPassword);
                 await userManager.AddToRoleAsync(unknownUser, Role.User);
             }
+        }
+
+        private static async Task SeedCommunicationTechnologies(IServiceProvider services, AppDbContext dbContext)
+        {
+            var technologies = new List<string> { CommunicationTechnologyConst.SignalR, CommunicationTechnologyConst.WebSockets, CommunicationTechnologyConst.Polling, CommunicationTechnologyConst.SSE };
+
+            foreach (var tech in technologies)
+            {
+                if (!await dbContext.CommunicationTechnologies.AnyAsync(c => c.Name == tech))
+                {
+                    CommunicationTechnology technology = new CommunicationTechnology
+                    {
+                        Name = tech,
+                    };
+                    dbContext.CommunicationTechnologies.Add(technology);
+                }
+            }
+            await dbContext.SaveChangesAsync();
         }
     }
 }

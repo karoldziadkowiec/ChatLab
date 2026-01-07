@@ -94,6 +94,7 @@ namespace ChatLab.CoreService
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IProblemRepository, ProblemRepository>();
             builder.Services.AddScoped<IUserFollowRepository, UserFollowRepository>();
+            builder.Services.AddScoped<ICommunicationTechnologyRepository, CommunicationTechnologyRepository>();
 
             // AutoMapper service
             builder.Services.AddAutoMapper(typeof(Program));

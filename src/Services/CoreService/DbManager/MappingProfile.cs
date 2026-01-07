@@ -23,6 +23,8 @@ namespace ChatLab.CoreService.DbManager
             CreateMap<Chat, ChatCreateDTO>().ReverseMap();
             CreateMap<Message, MessageDTO>().ReverseMap();
             CreateMap<Message, MessageSendDTO>().ReverseMap();
+            CreateMap<CommunicationTechnology, CommunicationTechnologyDTO>().ReverseMap();
+            CreateMap<CommunicationTechnology, CommunicationTechnologyCreateDTO>().ReverseMap();
         }
     }
 }

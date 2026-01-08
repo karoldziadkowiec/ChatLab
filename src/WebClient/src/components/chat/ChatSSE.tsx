@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Row, Col, Form, Button, Card, Container, Modal } from 'react-bootstrap';
-import Navbar from 'react-bootstrap/Navbar';
+import { Form, Button, Modal } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { RoutePaths } from '../../routes/RoutePaths';
 import AccountService from '../../services/api/AccountService';
@@ -188,54 +187,40 @@ const ChatSSE = () => {
         <div className="Chat">
             <h1><i className="bi bi-chat-dots-fill"></i> Chat - SSE</h1>
             <div className="chat-container">
-                <Navbar bg="dark" variant="dark" className="sticky-top">
-                    <Container>
-                        <Navbar.Brand className="mx-auto chat-name">
-                            <Row>
-                                <Col xs="auto">
-                                    {receiver ? `${receiver.firstName} ${receiver.lastName}` : 'Receiver'}
-                                </Col>
-                                <Col xs="auto">
-                                    <Button variant="danger" size='sm' onClick={() => setShowDeleteChatRoomModal(true)}>
-                                        <i className="bi bi-trash"></i>
-                                    </Button>
-                                </Col>
-                            </Row>
-                        </Navbar.Brand>
-                    </Container>
-                </Navbar>
+                <div className="chat-header sticky-top">
+                    <div className="chat-header__left">
+                        <div className="chat-avatar">
+                            {`${receiver?.firstName?.[0] ?? ''}${receiver?.lastName?.[0] ?? ''}`.toUpperCase()}
+                        </div>
+                        <div className="chat-title">
+                            <div className="chat-name">{receiver ? `${receiver.firstName} ${receiver.lastName}` : 'Receiver'}</div>
+                            <div className="chat-subtitle">Chat via SSE</div>
+                        </div>
+                    </div>
+                    <Button variant="danger" size='sm' onClick={() => setShowDeleteChatRoomModal(true)}>
+                        <i className="bi bi-trash"></i>
+                    </Button>
+                </div>
                 <div className="messages">
                     {messages.length > 0 ? (
-                        messages.map((message, index) => (
-                            <Row key={index} className="my-2">
-                                <Col xs={message.senderId === userId ? { span: 7, offset: 5 } : 7}>
-                                    <Row className="d-flex justify-content-between align-items-center">
-                                        <Col xs="auto">
-                                            {message.sender ? `${message.sender.firstName} ${message.sender.lastName}` : 'Sender'}
-                                        </Col>
-                                        <Col xs="auto">
-                                            <div className="message-timestamp">
-                                                {TimeService.formatDateToEURWithHour(message.timestamp)} ({message.communicationTechnology.name})
-                                            </div>
-                                        </Col>
-                                        <Col xs="auto">
-                                            {message.senderId === userId && (
-                                                <>
-                                                    <Button variant="secondary" size='sm' onClick={() => handleShowDeleteMessageModal(message.id)}>
-                                                        <i className="bi bi-trash"></i>
-                                                    </Button>
-                                                </>
+                        messages.map((message) => {
+                            const isMe = message.senderId === userId;
+                            return (
+                                <div key={message.id} className={`msg ${isMe ? 'msg--me' : 'msg--other'}`}>
+                                    <div className={`msg-bubble ${isMe ? 'msg-bubble--me' : 'msg-bubble--other'}`}>
+                                        <div className="msg-content">{message.content}</div>
+                                        <div className="msg-footer">
+                                            <span className="msg-time">{TimeService.formatDateToEURWithHour(message.timestamp)} ({message.communicationTechnology?.name ?? technologyName ?? 'SSE'})</span>
+                                            {isMe && (
+                                                <Button variant="outline-danger" size='sm' className="msg-delete" onClick={() => handleShowDeleteMessageModal(message.id)}>
+                                                    <i className="bi bi-trash"></i>
+                                                </Button>
                                             )}
-                                        </Col>
-                                    </Row>
-                                    <Card className={message.senderId === userId ? 'bg-primary text-white' : 'bg-light'}>
-                                        <Card.Body>
-                                            <Card.Text>{message.content}</Card.Text>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                            </Row>
-                        ))
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })
                     ) : (
                         <div>
                             <p><strong>You're starting a new conversation</strong></p>
@@ -246,29 +231,26 @@ const ChatSSE = () => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                <Form className="message-input">
-                    <Form.Group as={Row}>
-                        <Col xs={10}>
-                            <Form.Control
-                                type="text"
-                                value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                placeholder="Type a message"
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handleSendMessage();
-                                    }
-                                }}
-                            />
-                        </Col>
-                        <Col xs={2}>
-                            <Button variant="dark" onClick={handleSendMessage} className="w-100">
-                                <i className="bi bi-send-fill"></i>
-                            </Button>
-                        </Col>
-                    </Form.Group>
-                </Form>
+                <div className="message-input">
+                    <div className="message-input__inner">
+                        <input
+                            className="message-input__field"
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Type a message"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSendMessage();
+                                }
+                            }}
+                        />
+                        <Button variant="dark" onClick={handleSendMessage} className="message-input__send">
+                            <i className="bi bi-send-fill"></i>
+                        </Button>
+                    </div>
+                </div>
             </div>
 
             {/* Delete Chat Room Modal */}

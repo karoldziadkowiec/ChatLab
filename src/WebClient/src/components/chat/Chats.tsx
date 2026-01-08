@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Table, Button, Modal } from 'react-bootstrap';
+import { Button, Modal } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { RoutePaths } from '../../routes/RoutePaths';
 import AccountService from '../../services/api/AccountService';
@@ -107,60 +107,51 @@ const Chats = () => {
             <h1><i className="bi bi-chat-fill"></i> My Chats</h1>
             <p></p>
 
-            <div className="table-responsive">
-                <Table striped bordered hover variant="light">
-                    <thead className="table-dark">
-                        <tr>
-                            <th>User</th>
-                            <th>Last message</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {userChats.length > 0 ? (
-                            userChats.map((chat, index) => (
-                                <tr key={index}>
-                                    <td className="chat-room-row">
-                                        {chat.user1Id === userId ? (
-                                            `${chat.user2.firstName} ${chat.user2.lastName}`
-                                        ) : (
-                                            `${chat.user1.firstName} ${chat.user1.lastName}`
-                                        )}
-                                    </td>
-                                    <td className="chat-room-row">
-                                        {TimeService.formatDateToEURWithHour(lastMessageDates.get(chat.id) || '') || 'No messages'}
-                                    </td>
-                                    <td className="chat-room-row">
-                                        <Button variant="info" className="button-spacing" onClick={() => moveToSpecificChatSingnalRPage(chat.id)}>
-                                            <i className="bi bi-chat-fill"></i>
-                                            SignalR
-                                        </Button>
-                                        <Button variant="warning" className="button-spacing" onClick={() => moveToSpecificChatWSPage(chat.id)}>
-                                            <i className="bi bi-chat-fill"></i>
-                                            WebSockets
-                                        </Button>
-                                        <Button variant="secondary" className="button-spacing" onClick={() => moveToSpecificChatPollingPage(chat.id)}>
-                                            <i className="bi bi-chat-fill"></i>
-                                            Polling
-                                        </Button>
-                                        <Button variant="success" className="button-spacing" onClick={() => moveToSpecificChatSSEPage(chat.id)}>
-                                            <i className="bi bi-chat-fill"></i>
-                                            SSE
-                                        </Button>
-                                        <span className="button-spacing">|</span>
-                                        <Button variant="danger" onClick={() => handleShowDeleteChatRoomModal(chat.id)}>
-                                            <i className="bi bi-trash"></i>
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={9} className="text-center">No chat room available</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </Table>
+            <div className="chat-list">
+                {userChats.length > 0 ? (
+                    userChats.map((chat, index) => {
+                        const partner = chat.user1Id === userId ? chat.user2 : chat.user1;
+                        const last = TimeService.formatDateToEURWithHour(lastMessageDates.get(chat.id) || '') || 'No messages';
+                        const initials = `${partner.firstName?.[0] ?? ''}${partner.lastName?.[0] ?? ''}`.toUpperCase();
+                        return (
+                            <div key={index} className="chat-item">
+                                <div className="chat-main" onClick={() => moveToSpecificChatSingnalRPage(chat.id)} role="button" tabIndex={0}>
+                                    <div className="chat-avatar">{initials}</div>
+                                    <div className="chat-text">
+                                        <div className="chatlist-name">{partner.firstName} {partner.lastName}</div>
+                                        <div className="chat-last">
+                                            <i className="bi bi-clock"></i> {last}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="chat-actions">
+                                    <Button variant="info" className="button-spacing" title="Open SignalR chat" onClick={() => moveToSpecificChatSingnalRPage(chat.id)}>
+                                        <i className="bi bi-chat-fill"></i>
+                                        <span className="action-label"> SignalR</span>
+                                    </Button>
+                                    <Button variant="warning" className="button-spacing" title="Open WebSockets chat" onClick={() => moveToSpecificChatWSPage(chat.id)}>
+                                        <i className="bi bi-chat-fill"></i>
+                                        <span className="action-label"> WebSockets</span>
+                                    </Button>
+                                    <Button variant="secondary" className="button-spacing" title="Open Polling chat" onClick={() => moveToSpecificChatPollingPage(chat.id)}>
+                                        <i className="bi bi-chat-fill"></i>
+                                        <span className="action-label"> Polling</span>
+                                    </Button>
+                                    <Button variant="success" className="button-spacing" title="Open SSE chat" onClick={() => moveToSpecificChatSSEPage(chat.id)}>
+                                        <i className="bi bi-chat-fill"></i>
+                                        <span className="action-label"> SSE</span>
+                                    </Button>
+                                    <span className="actions-separator" />
+                                    <Button variant="danger" title="Delete chat" onClick={() => handleShowDeleteChatRoomModal(chat.id)}>
+                                        <i className="bi bi-trash"></i>
+                                    </Button>
+                                </div>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <div className="no-chats">No chat room available</div>
+                )}
             </div>
 
             {/* Delete Chat Room Modal */}

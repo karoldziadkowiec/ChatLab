@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Table, Button, Modal, Pagination, Form } from 'react-bootstrap';
+import { Card, Button, Modal, Pagination, Form } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { RoutePaths } from '../../routes/RoutePaths';
 import AccountService from '../../services/api/AccountService';
@@ -31,7 +31,7 @@ const Community = () => {
     const [sortCriteria, setSortCriteria] = useState('creationDateDesc');
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 20;
+    const itemsPerPage = 21;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 
@@ -282,104 +282,101 @@ const Community = () => {
                     </Form.Select>
                 </div>
             </div>
-            <div className="table-responsive">
-                <Table striped bordered hover variant="light">
-                    <thead className="table-dark">
-                        <tr>
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Location</th>
-                            <th>Join Date</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {currentUserItems.length > 0 ? (
-                            currentUserItems.map((user, index) => (
-                                <tr key={index}>
-                                    <td className="person-row">{user.firstName}</td>
-                                    <td className="person-row">{user.lastName}</td>
-                                    <td className="person-row">{user.location}</td>
-                                    <td className="person-row">{TimeService.formatDateToEUR(user.creationDate)}</td>
-                                    <td className="person-row">
-                                        {user.id !== userId && (
-                                            <>
+            <div className="user-grid">
+                {currentUserItems.length > 0 ? (
+                    currentUserItems.map((u, index) => (
+                        <Card key={index} className="user-card">
+                            <div className="user-card-header">
+                                <div className="user-avatar">
+                                    {`${u.firstName?.[0] ?? ''}${u.lastName?.[0] ?? ''}`.toUpperCase()}
+                                </div>
+                                <div className="user-header-text">
+                                    <div className="user-name">{u.firstName} {u.lastName}</div>
+                                    <div className="user-meta">
+                                        <i className="bi bi-geo-alt"></i> {u.location} · Joined {TimeService.formatDateToEUR(u.creationDate)}
+                                    </div>
+                                </div>
+                            </div>
+                            <Card.Body>
+                                <div className="user-actions">
+                                    <Button
+                                        variant="dark"
+                                        className="button-spacing"
+                                        title="Open user info"
+                                        onClick={() => handleShowUserDetails(u)}
+                                    >
+                                        <i className="bi bi-info-square"></i>
+                                        <span className="action-label"> Info</span>
+                                    </Button>
+                                    {u.id !== userId && (
+                                        <>
+                                            {followedUserIds.has(u.id) ? (
                                                 <Button
-                                                    variant="dark"
+                                                    variant="danger"
                                                     className="button-spacing"
-                                                    title="Open user info"
-                                                    onClick={() => handleShowUserDetails(user)}
+                                                    title="Remove from friends"
+                                                    onClick={() => handleShowRemoveFromFollowedModal(u.id)}
                                                 >
-                                                    <i className="bi bi-info-square"></i>
+                                                    <i className="bi bi-heart-fill"></i>
+                                                    <span className="action-label"> Unfollow</span>
                                                 </Button>
-                                                {followedUserIds.has(user.id) ? (
-                                                    <Button
-                                                        variant="danger"
-                                                        className="button-spacing"
-                                                        title="Remove from friends"
-                                                        onClick={() => handleShowRemoveFromFollowedModal(user.id)}
-                                                    >
-                                                        <i className="bi bi-heart-fill"></i>
-                                                    </Button>
-                                                ) : (
-                                                    <Button
-                                                        variant="success"
-                                                        className="button-spacing"
-                                                        title="Add to friends"
-                                                        onClick={() => handleCreateUserFollow(user.id)}
-                                                    >
-                                                        <i className="bi bi-heart"></i>
-                                                    </Button>
-                                                )}
-                                                <span className="button-spacing">|</span>
+                                            ) : (
                                                 <Button
-                                                    variant="info"
+                                                    variant="light"
                                                     className="button-spacing"
-                                                    title="Open SignalR chat"
-                                                    onClick={() => moveToSpecificChatSignalRPage(user.id)}
+                                                    title="Add to friends"
+                                                    onClick={() => handleCreateUserFollow(u.id)}
                                                 >
-                                                    <i className="bi bi-chat-fill"></i>
-                                                     SignalR
+                                                    <i className="bi bi-heart"></i>
+                                                    <span className="action-label"> Follow</span>
                                                 </Button>
-                                                <Button
-                                                    variant="warning"
-                                                    className="button-spacing"
-                                                    title="Open WebSockets chat"
-                                                    onClick={() => moveToSpecificChatWSPage(user.id)}
-                                                >
-                                                    <i className="bi bi-chat-fill"></i>
-                                                     WebSockets
-                                                </Button>
-                                                <Button
-                                                    variant="secondary"
-                                                    className="button-spacing"
-                                                    title="Open Polling chat"
-                                                    onClick={() => moveToSpecificChatPollingPage(user.id)}
-                                                >
-                                                    <i className="bi bi-chat-fill"></i>
-                                                     Polling
-                                                </Button>
-                                                <Button
-                                                    variant="success"
-                                                    className="button-spacing"
-                                                    title="Open SSE chat"
-                                                    onClick={() => moveToSpecificChatSSEPage(user.id)}
-                                                >
-                                                    <i className="bi bi-chat-fill"></i>
-                                                     SSE
-                                                </Button>
-                                            </>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan={7} className="text-center">No users available</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </Table>
+                                            )}
+                                            <span className="actions-separator" />
+                                            <Button
+                                                variant="info"
+                                                className="button-spacing"
+                                                title="Open SignalR chat"
+                                                onClick={() => moveToSpecificChatSignalRPage(u.id)}
+                                            >
+                                                <i className="bi bi-chat-fill"></i>
+                                                <span className="action-label"> SignalR</span>
+                                            </Button>
+                                            <Button
+                                                variant="warning"
+                                                className="button-spacing"
+                                                title="Open WebSockets chat"
+                                                onClick={() => moveToSpecificChatWSPage(u.id)}
+                                            >
+                                                <i className="bi bi-chat-fill"></i>
+                                                <span className="action-label"> WebSockets</span>
+                                            </Button>
+                                            <Button
+                                                variant="secondary"
+                                                className="button-spacing"
+                                                title="Open Polling chat"
+                                                onClick={() => moveToSpecificChatPollingPage(u.id)}
+                                            >
+                                                <i className="bi bi-chat-fill"></i>
+                                                <span className="action-label"> Polling</span>
+                                            </Button>
+                                            <Button
+                                                variant="success"
+                                                className="button-spacing"
+                                                title="Open SSE chat"
+                                                onClick={() => moveToSpecificChatSSEPage(u.id)}
+                                            >
+                                                <i className="bi bi-chat-fill"></i>
+                                                <span className="action-label"> SSE</span>
+                                            </Button>
+                                        </>
+                                    )}
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    ))
+                ) : (
+                    <div className="no-users">No users available</div>
+                )}
             </div>
 
             {/* Pagination */}
@@ -412,16 +409,30 @@ const Community = () => {
                 </Modal.Header>
                 <Modal.Body>
                     {selectedUser && (
-                        <div className="modal-content-centered">
-                            <p>
-                                <Form.Label className="name-label">
-                                    {(selectedUser.firstName + ' ' + selectedUser.lastName)}
-                                </Form.Label>
-                            </p>
-                            <Form.Label className="info-section">BASIC INFO</Form.Label>
-                            <p><strong>Phone Number:</strong> {selectedUser.phoneNumber}</p>
-                            <p><strong>Location:</strong> {selectedUser.location}</p>
-                            <p><strong>Join Date:</strong> {TimeService.formatDateToEUR(selectedUser.creationDate)}</p>
+                        <div className="user-details">
+                            <div className="user-details__header">
+                                <div className="user-details__avatar">
+                                    {`${selectedUser.firstName?.[0] ?? ''}${selectedUser.lastName?.[0] ?? ''}`.toUpperCase()}
+                                </div>
+                                <div>
+                                    <div className="user-details__name">{selectedUser.firstName} {selectedUser.lastName}</div>
+                                    <div className="user-details__meta">
+                                        <i className="bi bi-clock"></i> Joined {TimeService.formatDateToEUR(selectedUser.creationDate)}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="user-details__body">
+                                <div className="user-details__row">
+                                    <i className="bi bi-telephone"></i>
+                                    <span className="user-details__label">Phone</span>
+                                    <span className="user-details__value">{selectedUser.phoneNumber || '-'}</span>
+                                </div>
+                                <div className="user-details__row">
+                                    <i className="bi bi-geo-alt"></i>
+                                    <span className="user-details__label">Location</span>
+                                    <span className="user-details__value">{selectedUser.location || '-'}</span>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </Modal.Body>

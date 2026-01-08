@@ -7,20 +7,104 @@
     font-size: 17px;
 }
 
-.forms-container {
-    background-color: rgb(39, 37, 37);
-    width: 70%;
-    padding: 2% 2% 1% ;
-    border-radius: 40px;
+.support-subtitle {
+    color: #5f6a72;
+    margin-top: -6px;
+    margin-bottom: 18px;
 }
 
-.white-label {
-    color: white;
+/* Card */
+.support-card {
+    width: 70%;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
-.success-container {
-    background-color: rgb(198, 255, 173);
+.support-card__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.support-card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #5dd3eb 0%, #1a7182 100%);
+    color: #fff;
+    font-size: 1.2rem;
+}
+
+.support-card__title {
+    font-weight: 700;
+    color: #1b2631;
+}
+
+.support-card__meta {
+    color: #5f6a72;
+    font-size: 0.95rem;
+}
+
+.support-card__body {
+    padding: 16px 20px 22px;
+}
+
+.field-meta {
+    display: flex;
+    justify-content: flex-end;
+    font-size: 0.85rem;
+    color: #5f6a72;
+    margin-top: 4px;
+}
+
+.support-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.support-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Success Card */
+.support-success {
     width: 70%;
-    padding: 2% 2% 1% ;
-    border-radius: 40px;
+    background: #e9f9ee;
+    border: 1px solid #b6e6c4;
+    border-radius: 16px;
+    padding: 22px;
+    text-align: center;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.support-success__icon {
+    color: #1fa84a;
+    font-size: 2.2rem;
+}
+
+.support-success__title {
+    margin-top: 8px;
+    font-weight: 700;
+    color: #1b2631;
+}
+
+.support-success__meta {
+    color: #3f4a52;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .support-card,
+    .support-success {
+        width: 100%;
+    }
 }

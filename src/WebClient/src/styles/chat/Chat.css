@@ -42,13 +42,13 @@
     height: 75vh;
     background-color: rgb(210, 218, 227);
     width: 65%;
-    padding: 2% 2% 1% ;
+    padding: 2% 2% 1%;
     border-radius: 20px;
 }
 
 .chat-name {
     color: rgb(255, 255, 255) !important;
-    font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif !important;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif !important;
     font-weight: bold !important;
     font-size: 24px !important;
 }
@@ -80,4 +80,116 @@
 
 .sticky-navbar {
     z-index: 1000;
+}
+
+/* Modern chat header */
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #212529;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 14px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .12)
+}
+
+.chat-header__left {
+    display: flex;
+    align-items: center;
+    gap: 12px
+}
+
+.chat-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #5dd3eb 0%, #1a7182 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.chat-title {
+    display: flex;
+    flex-direction: column
+}
+
+.chat-subtitle {
+    font-size: 12px;
+    color: #cfd3da
+}
+
+/* Message thread */
+.msg {
+    display: flex;
+    margin: 8px 0
+}
+
+.msg--me {
+    justify-content: flex-end
+}
+
+.msg--other {
+    justify-content: flex-start
+}
+
+.msg-bubble {
+    max-width: 70%;
+    padding: 10px 12px;
+    border-radius: 16px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .08)
+}
+
+.msg-bubble--me {
+    background: #0d6efd;
+    color: #fff
+}
+
+.msg-bubble--other {
+    background: #fff;
+    color: #0b1220
+}
+
+.msg-content {
+    white-space: pre-wrap;
+    word-break: break-word
+}
+
+.msg-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #5b667a
+}
+
+.msg-bubble--me .msg-footer {
+    color: #eaf1ff
+}
+
+.msg-delete {
+    padding: 0 6px
+}
+
+/* Input bar */
+.message-input__inner {
+    display: flex;
+    gap: 10px
+}
+
+.message-input__field {
+    flex: 1;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 10px 12px
+}
+
+.message-input__send {
+    min-width: 44px
 }

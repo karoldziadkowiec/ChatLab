@@ -13,6 +13,147 @@
     margin-right: 10px;
 }
 
+/* Single-column Card List */
+.friend-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.friend-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    background: #fff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.friend-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.friend-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.friend-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #5dd3eb 0%, #1a7182 100%);
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.friend-header-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.friend-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #1b2631;
+}
+
+.friend-meta {
+    font-size: 0.9rem;
+    color: #5f6a72;
+}
+
+.friend-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.actions-separator {
+    width: 1px;
+    background: rgba(0, 0, 0, 0.08);
+    margin: 0 6px;
+}
+
+.action-label {
+    margin-left: 6px;
+}
+
+.no-users {
+    text-align: center;
+    padding: 24px;
+    color: #5f6a72;
+}
+
+/* User Details Modal */
+.user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.user-details__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-details__avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #5dd3eb 0%, #1a7182 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.user-details__name {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #1b2631;
+}
+
+.user-details__meta {
+    font-size: 0.95rem;
+    color: #5f6a72;
+}
+
+.user-details__body {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    padding-top: 12px;
+    display: grid;
+    gap: 10px;
+}
+
+.user-details__row {
+    display: grid;
+    grid-template-columns: 20px 120px 1fr;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-details__label {
+    color: #5f6a72;
+}
+
+.user-details__value {
+    color: #1b2631;
+    font-weight: 600;
+}
+
 /* Responsive Table */
 .table-responsive {
     overflow-x: auto;

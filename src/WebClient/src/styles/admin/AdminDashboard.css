@@ -1,13 +1,140 @@
 .AdminDashboard {
-    text-align: center;
     padding: 20px 10% 20px 10%;
 }
 
-.clickable-card {
-    cursor: pointer;
-    transition: transform 0.2s ease-in-out;
+/* Header */
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
 }
 
-.clickable-card:hover {
-    transform: scale(1.1);
+.dashboard-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dashboard-title .bi-grid {
+    font-size: 28px;
+    color: #0d6efd;
+}
+
+.dashboard-title h1 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+}
+
+.dashboard-meta {
+    color: #6c757d;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.dashboard-time {
+    margin-bottom: 16px;
+    color: #364052;
+}
+
+/* Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+@media (max-width: 992px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .AdminDashboard {
+        padding: 16px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+}
+
+/* Stat card */
+.stat-card {
+    position: relative;
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .08);
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+    overflow: hidden
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .12)
+}
+
+.stat-card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    margin-bottom: 10px;
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .08)
+}
+
+.stat-card__title {
+    font-weight: 700;
+    color: #0b1220;
+}
+
+.stat-card__count {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0b1220;
+    line-height: 1;
+}
+
+.stat-card::after {
+    content: "";
+    position: absolute;
+    right: -40px;
+    top: -40px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    opacity: .08
+}
+
+/* Variants */
+.is-users .stat-card__icon {
+    background: #0d6efd;
+}
+
+.is-users::after {
+    background: #0d6efd;
+}
+
+.is-problems .stat-card__icon {
+    background: #dc3545;
+}
+
+.is-problems::after {
+    background: #dc3545;
+}
+
+.is-chats .stat-card__icon {
+    background: #0dcaf0;
+}
+
+.is-chats::after {
+    background: #0dcaf0;
 }

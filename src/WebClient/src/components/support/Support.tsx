@@ -15,6 +15,8 @@ const Support = () => {
         requesterId: ''
     });
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const TITLE_MAX = 30;
+    const DESC_MAX = 500;
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -62,55 +64,70 @@ const Support = () => {
         return null;
     };
 
+    const titleLeft = TITLE_MAX - (problemCreateDTO.title?.length || 0);
+    const descLeft = DESC_MAX - (problemCreateDTO.description?.length || 0);
+
     return (
         <div className="Support">
             <h1><i className="bi bi-wrench-adjustable"></i> Support</h1>
-            <p></p>
-            <h3>Report a problem/request</h3>
+            <p className="support-subtitle">Report a problem or request - we’ll get back to you ASAP.</p>
 
             {!isSubmitted ? (
-                <div className="forms-container">
-                    <Container>
-                        <Row className="justify-content-md-center">
-                            <Col md="6">
-                                <Form onSubmit={handleReportProblem}>
-                                    <Form.Group className="mb-3" controlId="formTitle">
-                                        <Form.Label className="white-label">Title</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            placeholder="Title"
-                                            value={problemCreateDTO.title}
-                                            onChange={(e) => setProblemCreateDTO({ ...problemCreateDTO, title: e.target.value })}
-                                            maxLength={30}
-                                            required
-                                        />
-                                    </Form.Group>
-                                    <Form.Group className="mb-3" controlId="formDescription">
-                                        <Form.Label className="white-label">Description</Form.Label>
-                                        <Form.Control
-                                            as="textarea"
-                                            placeholder="Description"
-                                            value={problemCreateDTO.description}
-                                            onChange={(e) => setProblemCreateDTO({ ...problemCreateDTO, description: e.target.value })}
-                                            maxLength={500}
-                                            required
-                                        />
-                                    </Form.Group>
-                                    <Button variant="info" className="mb-3" type="submit">
-                                        <i className="bi bi-flag-fill"></i>
-                                        Submit
-                                    </Button>
-                                </Form>
-                            </Col>
-                        </Row>
-                    </Container>
+                <div className="support-card">
+                    <div className="support-card_header">
+                        <div className="support-card_icon"><i className="bi bi-life-preserver"></i></div>
+                        <div>
+                            <div className="support-card__title">New Report</div>
+                            <div className="support-card__meta">Provide a clear title and a brief description.</div>
+                        </div>
+                    </div>
+                    <div className="support-card__body">
+                        <Container>
+                            <Row className="justify-content-md-center">
+                                <Col md="8">
+                                    <Form onSubmit={handleReportProblem} aria-label="Support form">
+                                        <Form.Group className="mb-3" controlId="formTitle">
+                                            <Form.Label>Title</Form.Label>
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="Title"
+                                                value={problemCreateDTO.title}
+                                                onChange={(e) => setProblemCreateDTO({ ...problemCreateDTO, title: e.target.value })}
+                                                maxLength={TITLE_MAX}
+                                                required
+                                                aria-describedby="titleHelp"
+                                            />
+                                        </Form.Group>
+                                        <Form.Group className="mb-3" controlId="formDescription">
+                                            <Form.Label>Description</Form.Label>
+                                            <Form.Control
+                                                as="textarea"
+                                                placeholder="Description"
+                                                rows={6}
+                                                value={problemCreateDTO.description}
+                                                onChange={(e) => setProblemCreateDTO({ ...problemCreateDTO, description: e.target.value })}
+                                                maxLength={DESC_MAX}
+                                                required
+                                                aria-describedby="descHelp"
+                                            />
+                                        </Form.Group>
+                                        <div className="support-actions">
+                                            <Button variant="info" type="submit" className="support-submit">
+                                                <i className="bi bi-flag-fill"></i>
+                                                <span> Submit</span>
+                                            </Button>
+                                        </div>
+                                    </Form>
+                                </Col>
+                            </Row>
+                        </Container>
+                    </div>
                 </div>
             ) : (
-                <div className="success-container">
-                    <h5 style={{ color: 'green' }}>Problem/request has been reported successfully!</h5>
-                    <i className="bi bi-check-circle-fill" style={{ color: 'green' }}></i>
-                    <p></p>
-                    <h6><strong>We will try to solve the problem ASAP and contact you if necessary.</strong></h6>
+                <div className="support-success">
+                    <div className="support-success__icon"><i className="bi bi-check-circle-fill"></i></div>
+                    <div className="support-success__title">Submitted successfully</div>
+                    <div className="support-success__meta">We’ll review your report and contact you if needed.</div>
                 </div>
             )}
         </div>

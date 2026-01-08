@@ -203,24 +203,38 @@ return (
                 )}
             </Row>
         </div>
-        <div className="data-container">
-            {user && (
-                <div>
-                    <p><Form.Label className="white-label">E-mail: </Form.Label>
-                        <Form.Label className="email-label"> {user.email}</Form.Label></p>
-                    <p><Form.Label className="white-label">First Name: </Form.Label>
-                        <Form.Label className="blue-label"> {user.firstName}</Form.Label></p>
-                    <p><Form.Label className="white-label">Last Name: </Form.Label>
-                        <Form.Label className="blue-label"> {user.lastName}</Form.Label></p>
-                    <p><Form.Label className="white-label">Phone Number: </Form.Label>
-                        <Form.Label className="blue-label"> {user.phoneNumber}</Form.Label></p>
-                    <p><Form.Label className="white-label">Location: </Form.Label>
-                        <Form.Label className="blue-label"> {user.location}</Form.Label></p>
-                    <p><Form.Label className="white-label">Creation Date: </Form.Label>
-                        <Form.Label className="blue-label"> {TimeService.formatDateToEURWithHour(user.creationDate)}</Form.Label></p>
+        {user && (
+            <div className="profile-card">
+                <div className="profile-card__header">
+                    <div className="profile-avatar">
+                        {`${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`.toUpperCase()}
+                    </div>
+                    <div>
+                        <div className="profile-name">{user.firstName} {user.lastName}</div>
+                        <div className="profile-meta">
+                            <i className="bi bi-envelope"></i> {user.email} · Joined {TimeService.formatDateToEUR(user.creationDate)}
+                        </div>
+                    </div>
                 </div>
-            )}
-        </div>
+                <div className="profile-card__body">
+                    <div className="profile-row">
+                        <i className="bi bi-telephone"></i>
+                        <span className="profile-label">Phone</span>
+                        <span className="profile-value">{user.phoneNumber || '-'}</span>
+                    </div>
+                    <div className="profile-row">
+                        <i className="bi bi-geo"></i>
+                        <span className="profile-label">Location</span>
+                        <span className="profile-value">{user.location || '-'}</span>
+                    </div>
+                    <div className="profile-row">
+                        <i className="bi bi-calendar3"></i>
+                        <span className="profile-label">Created</span>
+                        <span className="profile-value">{TimeService.formatDateToEURWithHour(user.creationDate)}</span>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Edit Profile Modal */}
         <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>

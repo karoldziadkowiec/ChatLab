@@ -300,7 +300,7 @@ const AdminUsers = () => {
                 await ChatService.createChat(chatCreateDTO);
                 chatId = await ChatService.getChatIdBetweenUsers(userId, receiverId);
             }
-            navigate(RoutePaths.adminChat(chatId), { state: { chatId } });
+            navigate(RoutePaths.chatSignalR(chatId), { state: { chatId } });
         }
         catch (error) {
             console.error('Failed to open chat:', error);

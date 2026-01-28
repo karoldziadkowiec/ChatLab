@@ -4,7 +4,7 @@ import MessageService from "../api/MessageService";
 
 type OnMessageReceived = (message: Message) => void;
 
-export default class ChatHub {
+export default class ChatHubPolling {
     private chatId: number | null = null;
     private readonly onMessageReceived: OnMessageReceived;
 

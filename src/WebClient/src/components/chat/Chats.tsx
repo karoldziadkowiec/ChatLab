@@ -77,6 +77,10 @@ const Chats = () => {
         navigate(RoutePaths.chatSSE(chatId), { state: { chatId } });
     };
 
+    const moveToSpecificChatSocketIOPage = (chatId: number) => {
+        navigate(RoutePaths.chatSocketIO(chatId), { state: { chatId } });
+    };
+
     const handleShowDeleteChatRoomModal = (chatRoomId: number) => {
         setDeleteChatRoomId(chatRoomId);
         setShowDeleteChatRoomModal(true);
@@ -140,6 +144,10 @@ const Chats = () => {
                                     <Button variant="success" className="button-spacing" title="Open SSE chat" onClick={() => moveToSpecificChatSSEPage(chat.id)}>
                                         <i className="bi bi-chat-fill"></i>
                                         <span className="action-label"> SSE</span>
+                                    </Button>
+                                    <Button variant="dark" className="button-spacing" title="Open Socket.IO chat" onClick={() => moveToSpecificChatSocketIOPage(chat.id)}>
+                                        <i className="bi bi-chat-fill"></i>
+                                        <span className="action-label"> Socket.IO</span>
                                     </Button>
                                     <span className="actions-separator" />
                                     <Button variant="danger" title="Delete chat" onClick={() => handleShowDeleteChatRoomModal(chat.id)}>

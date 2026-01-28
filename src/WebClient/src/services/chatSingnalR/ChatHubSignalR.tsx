@@ -3,7 +3,7 @@ import ChatHubURL from '../../config/ChatHubSignalRConfig';
 import Message from '../../models/interfaces/Message';
 import MessageSendDTO from '../../models/dtos/MessageSendDTO';
 
-class ChatHub {
+class ChatHubSignalR {
     private connection: HubConnection | null = null;
     private chatId: number | null = null;
     private onMessageReceived: (message: Message) => void;
@@ -59,4 +59,4 @@ class ChatHub {
     }
 }
 
-export default ChatHub;
+export default ChatHubSignalR;

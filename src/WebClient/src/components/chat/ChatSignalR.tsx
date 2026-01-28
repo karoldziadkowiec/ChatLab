@@ -9,7 +9,7 @@ import ChatService from '../../services/api/ChatService';
 import MessageService from '../../services/api/MessageService';
 import CommunicationTechnologyService from '../../services/api/CommunicationTechnologyService';
 import CommunicationTechnologyConst from "../../models/enums/CommunicationTechnologyConst";
-import ChatHub from '../../services/chatSingnalR/ChatHub';
+import ChatHubSignalR from '../../services/chatSingnalR/ChatHubSignalR';
 import ChatModel from '../../models/interfaces/Chat';
 import Message from '../../models/interfaces/Message';
 import UserDTO from '../../models/dtos/UserDTO';
@@ -17,7 +17,7 @@ import MessageSendDTO from '../../models/dtos/MessageSendDTO';
 import '../../App.css';
 import '../../styles/chat/Chat.css';
 
-const Chat = () => {
+const ChatSignalR = () => {
     const [technologyName, setTechnologyName] = useState<string | null>(null);
     const [technologyId, setTechnologyId] = useState<number | null>(null);
     const { id } = useParams();
@@ -27,7 +27,7 @@ const Chat = () => {
     const [user, setUser] = useState<UserDTO | null>(null);
     const [receiver, setReceiver] = useState<UserDTO | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
-    const [chatHub, setChatHub] = useState<ChatHub | null>(null);
+    const [chatHubSignalR, setChatHubSignalR] = useState<ChatHubSignalR | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const [newMessage, setNewMessage] = useState<string>('');
     const [showDeleteChatRoomModal, setShowDeleteChatRoomModal] = useState<boolean>(false);
@@ -86,12 +86,12 @@ const Chat = () => {
 
     useEffect(() => {
         if (userId && id) {
-            const _chatHub = new ChatHub((message) => {
+            const _chatHub = new ChatHubSignalR((message) => {
                 setMessages((prevMessages) => [...prevMessages, message]);
             });
 
             _chatHub.startConnection(Number(id))
-                .then(() => setChatHub(_chatHub))
+                .then(() => setChatHubSignalR(_chatHub))
                 .catch(error => {
                     console.error('Failed to start chat service:', error);
                     toast.error('Failed to start chat service.');
@@ -120,7 +120,7 @@ const Chat = () => {
     }
 
     const handleSendMessage = async () => {
-        if (chatHub && newMessage.trim() !== '') {
+        if (chatHubSignalR && newMessage.trim() !== '') {
             try {
                 if (chatData?.id && user?.id && receiver?.id && technologyId) {
                     const startTime = performance.now();
@@ -133,7 +133,7 @@ const Chat = () => {
                         content: newMessage
                     };
 
-                    await chatHub.sendMessage(messageSendDTO);
+                    await chatHubSignalR.sendMessage(messageSendDTO);
                     setNewMessage('');
                     scrollToBottom();
 
@@ -291,4 +291,4 @@ const Chat = () => {
     );
 }
 
-export default Chat;
+export default ChatSignalR;

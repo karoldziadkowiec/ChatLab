@@ -9,7 +9,7 @@ import ChatService from '../../services/api/ChatService';
 import MessageService from '../../services/api/MessageService';
 import CommunicationTechnologyService from '../../services/api/CommunicationTechnologyService';
 import CommunicationTechnologyConst from "../../models/enums/CommunicationTechnologyConst";
-import ChatPollingHub from '../../services/chatPolling/ChatHub';
+import ChatHubPolling from '../../services/chatPolling/ChatHubPolling';
 import ChatModel from '../../models/interfaces/Chat';
 import Message from '../../models/interfaces/Message';
 import UserDTO from '../../models/dtos/UserDTO';
@@ -17,7 +17,7 @@ import MessageSendDTO from '../../models/dtos/MessageSendDTO';
 import '../../App.css';
 import '../../styles/chat/Chat.css';
 
-const Chat = () => {
+const ChatPolling = () => {
     const [technologyName, setTechnologyName] = useState<string | null>(null);
     const [technologyId, setTechnologyId] = useState<number | null>(null);
     const { id } = useParams();
@@ -27,7 +27,7 @@ const Chat = () => {
     const [user, setUser] = useState<UserDTO | null>(null);
     const [receiver, setReceiver] = useState<UserDTO | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
-    const [chatHub, setChatHub] = useState<ChatPollingHub | null>(null);
+    const [chatHubPolling, setChatHubPolling] = useState<ChatHubPolling | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const [newMessage, setNewMessage] = useState<string>('');
     const [showDeleteChatRoomModal, setShowDeleteChatRoomModal] = useState<boolean>(false);
@@ -83,12 +83,12 @@ const Chat = () => {
 
     useEffect(() => {
         if (userId && id) {
-            const hub = new ChatPollingHub((message: Message) => {
+            const hub = new ChatHubPolling((message: Message) => {
                 setMessages((prevMessages) => [...prevMessages, message]);
             }, { pollIntervalMs: 1000 });
 
             hub.startConnection(Number(id))
-                .then(() => setChatHub(hub))
+                .then(() => setChatHubPolling(hub))
                 .catch(error => {
                     console.error('Failed to start polling chat service:', error);
                     toast.error('Failed to start chat service.');
@@ -117,7 +117,7 @@ const Chat = () => {
     }
 
     const handleSendMessage = async () => {
-    if (!chatHub || newMessage.trim() === '') {
+    if (!chatHubPolling || newMessage.trim() === '') {
         toast.error('Message cannot be sent');
         return;
     }
@@ -134,11 +134,11 @@ const Chat = () => {
                 content: newMessage
             };
 
-            const createdMessage = await chatHub.sendMessage(messageSendDTO);
+            const createdMessage = await chatHubPolling.sendMessage(messageSendDTO);
 
             if (createdMessage) {
                 setMessages(prev => [...prev, createdMessage]);
-                chatHub.setLastMessageId(createdMessage.id);
+                chatHubPolling.setLastMessageId(createdMessage.id);
             } else {
             }
 
@@ -294,4 +294,4 @@ const Chat = () => {
     );
 };
 
-export default Chat;
+export default ChatPolling;

@@ -13,6 +13,7 @@ export const RoutePaths = {
   chatWS: (id: Id): string => `/chatWS/${id}`,
   chatPolling: (id: Id): string => `/chatPolling/${id}`,
   chatSSE: (id: Id): string => `/chatSSE/${id}`,
+  chatSocketIO: (id: Id): string => `/chatSocketIO/${id}`,
   community: (): string => "/community",
   myFriends: (): string => "/my-friends",
   support: (): string => "/support",
@@ -35,6 +36,7 @@ export const RoutePatterns = {
   chatWS: "/chatWS/:id",
   chatPolling: "/chatPolling/:id",
   chatSSE: "/chatSSE/:id",
+  chatSocketIO: "/chatSocketIO/:id",
   adminChat: "/admin/chat/:id",
 } as const;
 

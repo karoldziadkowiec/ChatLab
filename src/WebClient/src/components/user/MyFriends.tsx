@@ -189,6 +189,12 @@ const MyFriends = () => {
         navigate(RoutePaths.chatSSE(chatId), { state: { chatId } });
     };
 
+    const moveToSpecificChatSocketIOPage = async (otherUserId: string) => {
+        const chatId = await handleOpenChat(otherUserId);
+        if (!chatId) return;
+        navigate(RoutePaths.chatSocketIO(chatId), { state: { chatId } });
+    };
+
     const searchUsers = (userFollowers: UserFollow[]) => {
         if (!searchTerm) {
             return userFollowers;
@@ -297,6 +303,15 @@ const MyFriends = () => {
                                                     >
                                                         <i className="bi bi-chat-fill"></i>
                                                         <span className="action-label"> SSE</span>
+                                                    </Button>
+                                                    <Button
+                                                        variant="dark"
+                                                        className="button-spacing"
+                                                        title="Open Socket.IO chat"
+                                                        onClick={() => moveToSpecificChatSocketIOPage(user.followed.id)}
+                                                    >
+                                                        <i className="bi bi-chat-fill"></i>
+                                                        <span className="action-label"> Socket.IO</span>
                                                     </Button>
                                                 </>
                                             )}
@@ -419,6 +434,15 @@ const MyFriends = () => {
                                                     >
                                                         <i className="bi bi-chat-fill"></i>
                                                         <span className="action-label"> SSE</span>
+                                                    </Button>
+                                                    <Button
+                                                        variant="dark"
+                                                        className="button-spacing"
+                                                        title="Open Socket.IO chat"
+                                                        onClick={() => moveToSpecificChatSocketIOPage(user.follower.id)}
+                                                    >
+                                                        <i className="bi bi-chat-fill"></i>
+                                                        <span className="action-label"> Socket.IO</span>
                                                     </Button>
                                                 </>
                                             )}

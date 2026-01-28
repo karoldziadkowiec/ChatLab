@@ -3,137 +3,179 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Form, Button, Modal } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { RoutePaths } from '../../routes/RoutePaths';
-import AccountService from "../../services/api/AccountService";
-import TimeService from "../../services/time/TimeService";
-import ChatService from "../../services/api/ChatService";
-import MessageService from "../../services/api/MessageService";
+import AccountService from '../../services/api/AccountService';
+import TimeService from '../../services/time/TimeService';
+import ChatService from '../../services/api/ChatService';
+import MessageService from '../../services/api/MessageService';
 import CommunicationTechnologyService from '../../services/api/CommunicationTechnologyService';
-import ChatHubWebSockets from "../../services/chatWebSockets/ChatHubWebSockets";
 import CommunicationTechnologyConst from "../../models/enums/CommunicationTechnologyConst";
-import Chat from "../../models/interfaces/Chat";
-import Message from "../../models/interfaces/Message";
-import UserDTO from "../../models/dtos/UserDTO";
-import MessageSendDTO from "../../models/dtos/MessageSendDTO";
+import ChatHubSocketIO from '../../services/chatSocketIO/ChatHubSocketIO';
+import ChatModel from '../../models/interfaces/Chat';
+import Message from '../../models/interfaces/Message';
+import UserDTO from '../../models/dtos/UserDTO';
+import MessageSendDTO from '../../models/dtos/MessageSendDTO';
 import '../../App.css';
-import "../../styles/chat/Chat.css";
+import '../../styles/chat/Chat.css';
 
-const ChatWebSockets = () => {
+const ChatSocketIO = () => {
     const [technologyName, setTechnologyName] = useState<string | null>(null);
     const [technologyId, setTechnologyId] = useState<number | null>(null);
     const { id } = useParams();
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | null>(null);
-    const [chatData, setChatData] = useState<Chat | null>(null);
+    const [chatData, setChatData] = useState<ChatModel | null>(null);
     const [user, setUser] = useState<UserDTO | null>(null);
     const [receiver, setReceiver] = useState<UserDTO | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
-    const [wsClient, setWsClient] = useState<ChatHubWebSockets | null>(null);
-
+    const [chatHubSocketIO, setChatHubSocketIO] = useState<ChatHubSocketIO | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
-    const [newMessage, setNewMessage] = useState("");
-
-    const [showDeleteChatRoomModal, setShowDeleteChatRoomModal] = useState(false);
-    const [showDeleteMessageModal, setShowDeleteMessageModal] = useState(false);
+    const [newMessage, setNewMessage] = useState<string>('');
+    const [showDeleteChatRoomModal, setShowDeleteChatRoomModal] = useState<boolean>(false);
+    const [showDeleteMessageModal, setShowDeleteMessageModal] = useState<boolean>(false);
     const [deleteMessageId, setDeleteMessageId] = useState<number | null>(null);
 
-    // Load user + chat metadata
     useEffect(() => {
-        const load = async () => {
+        const fetchUserData = async () => {
             try {
-                const _userId = await AccountService.getId();
-                if (_userId)
-                    setUserId(_userId);
-
-                if (id) {
-                    const chat = await ChatService.getChatById(Number(id));
-                    setChatData(chat);
-
-                    if (chat.user1Id === _userId) {
-                        setUser(chat.user1);
-                        setReceiver(chat.user2);
-                    } else {
-                        setUser(chat.user2);
-                        setReceiver(chat.user1);
-                    }
-
-                    const msgs = await MessageService.getMessagesForChat(Number(id));
-                    setMessages(msgs);
-
-                    const techName = CommunicationTechnologyConst.WebSockets;
-                    setTechnologyName(techName);
-                    try {
-                        const _technologyId = await CommunicationTechnologyService.getCommunicationTechnologyId(techName);
-                        setTechnologyId(_technologyId);
-                    } catch (e) {
-                        console.error('Failed to resolve communication technology id:', e);
-                    }
-                }
+                const id = await AccountService.getId();
+                if (id) setUserId(id);
             } catch (error) {
-                toast.error("Failed to load chat data");
+                console.error('Failed to fetch userId:', error);
+                toast.error('Failed to load userId.');
             }
         };
 
-        load();
-    }, [id]);
+        const fetchChatData = async (chatId: number) => {
+            try {
+                const _chatData = await ChatService.getChatById(chatId);
+                setChatData(_chatData);
 
-    // Open WebSocket connection
-    useEffect(() => {
-        if (id && userId) {
-            const client = new ChatHubWebSockets(Number(id), (msg) => {
-                setMessages(prev => [...prev, msg]);
-            });
+                if (_chatData.user1Id === userId) {
+                    setUser(_chatData.user1);
+                    setReceiver(_chatData.user2);
+                } else {
+                    setUser(_chatData.user2);
+                    setReceiver(_chatData.user1);
+                }
 
-            client.connect()
-                .then(() => setWsClient(client))
-                .catch(err => toast.error("Cannot connect to WebSocket"));
+                const _messages = await MessageService.getMessagesForChat(chatId);
+                setMessages(_messages);
 
-            return () => client.disconnect();
+                const techName = CommunicationTechnologyConst.SocketIO;
+                setTechnologyName(techName);
+                try {
+                    const _technologyId = await CommunicationTechnologyService.getCommunicationTechnologyId(techName);
+                    setTechnologyId(_technologyId);
+                } catch (e) {
+                    console.error('Failed to resolve communication technology id:', e);
+                }
+            } catch (error) {
+                console.error('Failed to fetch chat data:', error);
+                toast.error('Failed to load chat data.');
+            }
+        };
+
+        if (id) {
+            fetchUserData();
+            fetchChatData(Number(id));
         }
     }, [id, userId]);
 
+    useEffect(() => {
+        if (!id || !userId) return;
+        const hub = new ChatHubSocketIO();
+        // Pass Authorization header to Socket.IO so server can call CoreService
+        AccountService.getAuthorizationHeader()
+            .then((authHeader) => {
+                hub.setAuthorization(authHeader);
+                return hub.connect(Number(id), userId);
+            })
+            .then(() => {
+                setChatHubSocketIO(hub);
+                const onMessage = (incoming: Message) => {
+                    setMessages(prev => {
+                        // Avoid duplicates when ack + broadcast both arrive
+                        if (prev.some(m => m.id === incoming.id)) return prev;
+                        return [...prev, incoming];
+                    });
+                    scrollToBottom();
+                };
+                hub.onMessage(onMessage);
+                // Store listener for cleanup
+                (hub as any)._onMessageRef = onMessage;
+            })
+            .catch((err) => {
+                console.error('Socket.IO connect error:', err);
+                toast.error('Failed to connect to Socket.IO.');
+            });
+
+        return () => {
+            const ref = (hub as any)._onMessageRef as ((m: Message) => void) | undefined;
+            if (ref) {
+                hub.offMessage(ref);
+                (hub as any)._onMessageRef = undefined;
+            }
+            hub.disconnect();
+            setChatHubSocketIO(null);
+        };
+    }, [userId, id]);
 
     useEffect(() => {
-        if (messagesEndRef.current)
-            messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        scrollToBottom();
     }, [messages]);
 
+    const scrollToBottom = () => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    if (!chatData || !(chatData.user1Id === userId || chatData.user2Id === userId)) {
+        return <div><p><strong><h2>No chat found...</h2></strong></p></div>;
+    }
 
     const handleSendMessage = async () => {
-        if (!wsClient || !newMessage.trim() || !chatData || !user || !receiver) {
-            toast.error("Message cannot be sent");
-            return;
-        }
+    if (!chatHubSocketIO || newMessage.trim() === '') {
+        toast.error('Message cannot be sent');
+        return;
+    }
 
-        try {
-            if (chatData?.id && user?.id && receiver?.id && technologyId) {
-                const startTime = performance.now();
-                
-                const messageSendDTO: MessageSendDTO = {
-                    chatId: chatData.id,
-                    senderId: user.id,
-                    receiverId: receiver.id,
-                    communicationTechnologyId: technologyId,
-                    content: newMessage
-                };
+    try {
+        if (chatData?.id && user?.id && receiver?.id && technologyId) {
+            const startTime = performance.now();
 
-                wsClient.send(messageSendDTO);
-                setNewMessage("");
+            const messageSendDTO: MessageSendDTO = {
+                chatId: chatData.id,
+                senderId: user.id,
+                receiverId: receiver.id,
+                communicationTechnologyId: technologyId,
+                content: newMessage
+            };
 
-                const updated = await MessageService.getMessagesForChat(chatData.id);
-                setMessages(updated);
+            const createdMessage = await chatHubSocketIO.sendMessage(messageSendDTO);
 
-                const endTime = performance.now();
-                const timeTaken = endTime - startTime;
-                console.log(`Czas wysyłania wiadomości dla WebSockets: ${Math.round(timeTaken)} ms`);
+            if (createdMessage) {
+                setMessages(prev => {
+                    if (prev.some(m => m.id === createdMessage.id)) return prev;
+                    return [...prev, createdMessage];
+                });
+                chatHubSocketIO.setLastMessageId(createdMessage.id);
+            } else {
             }
-            else {
-                toast.error('Unable to send message. Missing required data.');
-            }
+
+            setNewMessage('');
+            scrollToBottom();
+
+            const endTime = performance.now();
+            const timeTaken = endTime - startTime;
+            console.log(`Czas wysyłania wiadomości dla SocketIO: ${Math.round(timeTaken)} ms`);
+        } else {
+            toast.error('Unable to send message. Missing required data.');
         }
-        catch (error) {
-            console.error('Failed to send message:', error);
-            toast.error('Failed to send message.');
-        }
+    } catch (error) {
+        console.error('Failed to send message:', error);
+        toast.error('Failed to send message.');
+    }
 };
 
     const handleDeleteChatRoom = async () => {
@@ -167,7 +209,7 @@ const ChatWebSockets = () => {
             setShowDeleteMessageModal(false);
             setDeleteMessageId(null);
             // Refresh the chat data
-            const _messages = await MessageService.getMessagesForChat(chatData!.id);
+            const _messages = await MessageService.getMessagesForChat(chatData.id);
             setMessages(_messages);
         }
         catch (error) {
@@ -176,15 +218,9 @@ const ChatWebSockets = () => {
         }
     };
 
-
-    if (!chatData || !user || !receiver) {
-        return <div>No chat found...</div>;
-    }
-
-
     return (
         <div className="Chat">
-            <h1><i className="bi bi-chat-dots-fill"></i> Chat - WebSockets</h1>
+            <h1><i className="bi bi-chat-dots-fill"></i> Chat - Socket.IO</h1>
             <div className="chat-container">
                 <div className="chat-header sticky-top">
                     <div className="chat-header__left">
@@ -193,7 +229,7 @@ const ChatWebSockets = () => {
                         </div>
                         <div className="chat-title">
                             <div className="chat-name">{receiver ? `${receiver.firstName} ${receiver.lastName}` : 'Receiver'}</div>
-                            <div className="chat-subtitle">Chat via WebSockets</div>
+                            <div className="chat-subtitle">Chat via Socket.IO</div>
                         </div>
                     </div>
                     <Button variant="danger" size='sm' onClick={() => setShowDeleteChatRoomModal(true)}>
@@ -203,13 +239,14 @@ const ChatWebSockets = () => {
                 <div className="messages">
                     {messages.length > 0 ? (
                         messages.map((message) => {
-                            const isMe = message.senderId === userId;
+                            const isMe = `${message.senderId}` === `${userId}`;
                             return (
-                                <div key={message.id} className={`msg ${isMe ? 'msg--me' : 'msg--other'}`}>
+                                <div key={message.id ?? `${message.chatId}-${message.timestamp}-${message.content}`}
+                                     className={`msg ${isMe ? 'msg--me' : 'msg--other'}`}>
                                     <div className={`msg-bubble ${isMe ? 'msg-bubble--me' : 'msg-bubble--other'}`}>
                                         <div className="msg-content">{message.content}</div>
                                         <div className="msg-footer">
-                                            <span className="msg-time">{TimeService.formatDateToEURWithHour(message.timestamp)} ({message.communicationTechnology?.name ?? technologyName ?? 'WebSockets'})</span>
+                                            <span className="msg-time">{TimeService.formatDateToEURWithHour(message.timestamp)} ({message.communicationTechnology?.name ?? technologyName ?? 'Socket.IO'})</span>
                                             {isMe && (
                                                 <Button variant="outline-danger" size='sm' className="msg-delete" onClick={() => handleShowDeleteMessageModal(message.id)}>
                                                     <i className="bi bi-trash"></i>
@@ -279,4 +316,4 @@ const ChatWebSockets = () => {
     );
 };
 
-export default ChatWebSockets;
+export default ChatSocketIO;

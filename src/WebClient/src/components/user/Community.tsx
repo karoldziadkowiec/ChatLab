@@ -208,6 +208,12 @@ const Community = () => {
         navigate(RoutePaths.chatSSE(chatId), { state: { chatId } });
     };
 
+    const moveToSpecificChatSocketIOPage = async (otherUserId: string) => {
+        const chatId = await handleOpenChat(otherUserId);
+        if (!chatId) return;
+        navigate(RoutePaths.chatSocketIO(chatId), { state: { chatId } });
+    };
+
     const searchUsers = (users: UserDTO[]) => {
         if (!searchTerm) {
             return users;
@@ -367,6 +373,15 @@ const Community = () => {
                                             >
                                                 <i className="bi bi-chat-fill"></i>
                                                 <span className="action-label"> SSE</span>
+                                            </Button>
+                                            <Button
+                                                variant="dark"
+                                                className="button-spacing"
+                                                title="Open Socket.IO chat"
+                                                onClick={() => moveToSpecificChatSocketIOPage(u.id)}
+                                            >
+                                                <i className="bi bi-chat-fill"></i>
+                                                <span className="action-label"> Socket.IO</span>
                                             </Button>
                                         </>
                                     )}

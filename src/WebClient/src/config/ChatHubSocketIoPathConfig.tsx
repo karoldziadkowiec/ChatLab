@@ -1,0 +1,1 @@
+export default '/rt/socketio/socket.io';

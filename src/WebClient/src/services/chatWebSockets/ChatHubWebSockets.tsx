@@ -1,10 +1,9 @@
-// src/services/chatWebSockets/ChatHub.ts
 import MessageSendDTO from "../../models/dtos/MessageSendDTO";
 import Message from "../../models/interfaces/Message";
 import ChatHubURL from '../../config/ChatHubWebSocketsConfig';
 import AccountService from "../api/AccountService"; // używaj jeśli masz metodę getToken
 
-export default class ChatWebSocket {
+export default class ChatHubWebSockets {
     private socket: WebSocket | null = null;
     private readonly chatId: number;
     private readonly onMessageReceived: (msg: Message) => void;

@@ -37,6 +37,22 @@
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
       "UpstreamPathTemplate": "/rt/ws/{everything}",
       "UpstreamHttpMethod": ["GET", "OPTIONS"]
+    },
+    {
+      "DownstreamPathTemplate": "/socket.io/",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8016 }],
+      "UpstreamPathTemplate": "/rt/socketio/socket.io/",
+      "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
+    },
+    {
+      "DownstreamPathTemplate": "/socket.io/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8016 }],
+      "UpstreamPathTemplate": "/rt/socketio/socket.io/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
     }
   ],
   "GlobalConfiguration": {

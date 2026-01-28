@@ -53,6 +53,14 @@
       "UpstreamPathTemplate": "/rt/socketio/socket.io/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
+    },
+    {
+      "DownstreamPathTemplate": "/chatlab.grpc.ChatGrpc/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
+      "UpstreamPathTemplate": "/chatlab.grpc.ChatGrpc/{everything}",
+      "UpstreamHttpMethod": ["POST", "OPTIONS"],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
     }
   ],
   "GlobalConfiguration": {

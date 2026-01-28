@@ -1,12 +1,14 @@
 using ChatLab.CoreService.DbManager;
 using ChatLab.CoreService.Entities;
-using ChatLab.CoreService.HubManager;
 using ChatLab.CoreService.Models.Constants;
+using ChatLab.CoreService.RealTime.GRPC.Services;
+using ChatLab.CoreService.RealTime.SignalR;
+using ChatLab.CoreService.RealTime.SSE.Classes;
+using ChatLab.CoreService.RealTime.SSE.Interfaces;
 using ChatLab.CoreService.Repositories.Classes;
 using ChatLab.CoreService.Repositories.Interfaces;
 using ChatLab.CoreService.Services.Classes;
 using ChatLab.CoreService.Services.Interfaces;
-using ChatLab.CoreService.SSE;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -58,7 +60,7 @@ namespace ChatLab.CoreService
                     ClockSkew = TimeSpan.FromSeconds(30),
                     ValidAudience = configuration["JWT:ValidAudience"],
                     ValidIssuer = configuration["JWT:ValidIssuer"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"]))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Secret"] ?? throw new InvalidOperationException("JWT:Secret not configured")))
                 };
                 // Log auth failures in development to diagnose 401
                 options.Events = new JwtBearerEvents
@@ -105,7 +107,8 @@ namespace ChatLab.CoreService
             // Accessing HttpContext property (cookies)
             builder.Services.AddHttpContextAccessor();
 
-            // Real time chat (SignalR)
+            // Real time chat:
+            // SignalR
             builder.Services.AddSignalR();
 
             // WebSockets
@@ -114,6 +117,14 @@ namespace ChatLab.CoreService
 
             // SSE
             builder.Services.AddSingleton<IChatSseService, ChatSseService>();
+
+            // gRPC services
+            builder.Services.AddGrpc();
+            builder.Services.AddGrpcReflection();
+            builder.Services.AddHttpClient("CoreSelf", c =>
+            {
+                c.BaseAddress = new Uri("http://localhost:8001");
+            });
 
             // Controller handler
             builder.Services.AddControllers();
@@ -185,6 +196,17 @@ namespace ChatLab.CoreService
 
             // Endpoints
             app.MapControllers();
+
+            // gRPC endpoints (with gRPC-Web enabled)
+            app.UseGrpcWeb();
+                app.MapGrpcService<ChatGrpcService>()
+                    .EnableGrpcWeb()
+                    .RequireCors("AllowClient")
+                    .RequireAuthorization();
+            if (app.Environment.IsDevelopment())
+            {
+                app.MapGrpcReflectionService();
+            }
 
             // Use SignalR
             app.MapHub<ChatHub>("/rt/signalr");

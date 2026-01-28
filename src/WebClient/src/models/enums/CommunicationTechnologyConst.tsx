@@ -3,7 +3,8 @@ enum CommunicationTechnologyConst {
   WebSockets = "WebSockets",
   Polling = "Polling",
   SSE = "SSE",
-  SocketIO = "Socket.IO"
+  SocketIO = "Socket.IO",
+  GRPC = "gRPC"
 }
 
 export default CommunicationTechnologyConst;

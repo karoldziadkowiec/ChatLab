@@ -81,6 +81,10 @@ const Chats = () => {
         navigate(RoutePaths.chatSocketIO(chatId), { state: { chatId } });
     };
 
+    const moveToSpecificChatGrpcPage = (chatId: number) => {
+        navigate(RoutePaths.chatGRPC(chatId), { state: { chatId } });
+    };
+
     const handleShowDeleteChatRoomModal = (chatRoomId: number) => {
         setDeleteChatRoomId(chatRoomId);
         setShowDeleteChatRoomModal(true);
@@ -148,6 +152,10 @@ const Chats = () => {
                                     <Button variant="dark" className="button-spacing" title="Open Socket.IO chat" onClick={() => moveToSpecificChatSocketIOPage(chat.id)}>
                                         <i className="bi bi-chat-fill"></i>
                                         <span className="action-label"> Socket.IO</span>
+                                    </Button>
+                                    <Button variant="primary" className="button-spacing" title="Open gRPC chat" onClick={() => moveToSpecificChatGrpcPage(chat.id)}>
+                                        <i className="bi bi-chat-fill"></i>
+                                        <span className="action-label"> gRPC</span>
                                     </Button>
                                     <span className="actions-separator" />
                                     <Button variant="danger" title="Delete chat" onClick={() => handleShowDeleteChatRoomModal(chat.id)}>

@@ -195,6 +195,12 @@ const MyFriends = () => {
         navigate(RoutePaths.chatSocketIO(chatId), { state: { chatId } });
     };
 
+    const moveToSpecificChatGrpcPage = async (otherUserId: string) => {
+        const chatId = await handleOpenChat(otherUserId);
+        if (!chatId) return;
+        navigate(RoutePaths.chatGRPC(chatId), { state: { chatId } });
+    };
+
     const searchUsers = (userFollowers: UserFollow[]) => {
         if (!searchTerm) {
             return userFollowers;
@@ -312,6 +318,15 @@ const MyFriends = () => {
                                                     >
                                                         <i className="bi bi-chat-fill"></i>
                                                         <span className="action-label"> Socket.IO</span>
+                                                    </Button>
+                                                    <Button
+                                                        variant="primary"
+                                                        className="button-spacing"
+                                                        title="Open gRPC chat"
+                                                        onClick={() => moveToSpecificChatGrpcPage(user.followed.id)}
+                                                    >
+                                                        <i className="bi bi-chat-fill"></i>
+                                                        <span className="action-label"> gRPC</span>
                                                     </Button>
                                                 </>
                                             )}
@@ -443,6 +458,15 @@ const MyFriends = () => {
                                                     >
                                                         <i className="bi bi-chat-fill"></i>
                                                         <span className="action-label"> Socket.IO</span>
+                                                    </Button>
+                                                    <Button
+                                                        variant="primary"
+                                                        className="button-spacing"
+                                                        title="Open gRPC chat"
+                                                        onClick={() => moveToSpecificChatGrpcPage(user.follower.id)}
+                                                    >
+                                                        <i className="bi bi-chat-fill"></i>
+                                                        <span className="action-label"> gRPC</span>
                                                     </Button>
                                                 </>
                                             )}

@@ -8,6 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="14.0.0" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.61.0" />
+    <PackageReference Include="Grpc.AspNetCore.Web" Version="2.76.0" />
+    <PackageReference Include="Grpc.AspNetCore.Server.Reflection" Version="2.61.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.25.3" />
+    <PackageReference Include="Grpc.Tools" Version="2.61.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.22" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.22" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.11" />
@@ -29,6 +37,10 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="RealTime\GRPC\Protos\chat.proto" GrpcServices="Server" />
   </ItemGroup>
 
 </Project>

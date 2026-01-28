@@ -14,6 +14,7 @@ export const RoutePaths = {
   chatPolling: (id: Id): string => `/chatPolling/${id}`,
   chatSSE: (id: Id): string => `/chatSSE/${id}`,
   chatSocketIO: (id: Id): string => `/chatSocketIO/${id}`,
+  chatGRPC: (id: Id): string => `/chatGRPC/${id}`,
   community: (): string => "/community",
   myFriends: (): string => "/my-friends",
   support: (): string => "/support",
@@ -37,6 +38,7 @@ export const RoutePatterns = {
   chatPolling: "/chatPolling/:id",
   chatSSE: "/chatSSE/:id",
   chatSocketIO: "/chatSocketIO/:id",
+  chatGRPC: "/chatGRPC/:id",
   adminChat: "/admin/chat/:id",
 } as const;
 

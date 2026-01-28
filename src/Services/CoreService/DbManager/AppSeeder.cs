@@ -96,7 +96,7 @@ namespace ChatLab.CoreService.DbManager
 
         private static async Task SeedCommunicationTechnologies(IServiceProvider services, AppDbContext dbContext)
         {
-            var technologies = new List<string> { CommunicationTechnologyConst.SignalR, CommunicationTechnologyConst.WebSockets, CommunicationTechnologyConst.Polling, CommunicationTechnologyConst.SSE, CommunicationTechnologyConst.SocketIO };
+            var technologies = new List<string> { CommunicationTechnologyConst.SignalR, CommunicationTechnologyConst.WebSockets, CommunicationTechnologyConst.Polling, CommunicationTechnologyConst.SSE, CommunicationTechnologyConst.SocketIO, CommunicationTechnologyConst.GRPC };
 
             foreach (var tech in technologies)
             {

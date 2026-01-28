@@ -24,6 +24,7 @@ import AdminRaportsChats from '../components/admin/AdminRaportsChats';
 import ChatWebSockets from '../components/chat/ChatWebSockets';
 import ChatPolling from '../components/chat/ChatPolling';
 import ChatSSE from '../components/chat/ChatSSE';
+import ChatGRPC from '../components/chat/ChatGRPC';
 import ChatSocketIO from '../components/chat/ChatSocketIO';
 import { RoutePaths, RoutePatterns } from './RoutePaths';
 
@@ -41,6 +42,7 @@ const Routing = () => {
         <Route path={RoutePatterns.chatPolling} element={<ProtectedRoute element={<DynamicNavbar><ChatPolling /></DynamicNavbar>} allowedRoles={[Role.Admin, Role.User]} />} />
         <Route path={RoutePatterns.chatSSE} element={<ProtectedRoute element={<DynamicNavbar><ChatSSE /></DynamicNavbar>} allowedRoles={[Role.Admin, Role.User]} />} />
         <Route path={RoutePatterns.chatSocketIO} element={<ProtectedRoute element={<DynamicNavbar><ChatSocketIO /></DynamicNavbar>} allowedRoles={[Role.Admin, Role.User]} />} />
+        <Route path={RoutePatterns.chatGRPC} element={<ProtectedRoute element={<DynamicNavbar><ChatGRPC /></DynamicNavbar>} allowedRoles={[Role.Admin, Role.User]} />} />
         <Route path={RoutePaths.community()} element={<ProtectedRoute element={<DynamicNavbar><Community /></DynamicNavbar>} allowedRoles={[Role.Admin, Role.User]} />} />
         <Route path={RoutePaths.myFriends()} element={<ProtectedRoute element={<DynamicNavbar><MyFriends /></DynamicNavbar>} allowedRoles={[Role.Admin, Role.User]} />} />
         <Route path={RoutePaths.support()} element={<ProtectedRoute element={<DynamicNavbar><Support /></DynamicNavbar>} allowedRoles={[Role.Admin, Role.User]} />} />

@@ -214,6 +214,12 @@ const Community = () => {
         navigate(RoutePaths.chatSocketIO(chatId), { state: { chatId } });
     };
 
+    const moveToSpecificChatGrpcPage = async (otherUserId: string) => {
+        const chatId = await handleOpenChat(otherUserId);
+        if (!chatId) return;
+        navigate(RoutePaths.chatGRPC(chatId), { state: { chatId } });
+    };
+
     const searchUsers = (users: UserDTO[]) => {
         if (!searchTerm) {
             return users;
@@ -382,6 +388,15 @@ const Community = () => {
                                             >
                                                 <i className="bi bi-chat-fill"></i>
                                                 <span className="action-label"> Socket.IO</span>
+                                            </Button>
+                                            <Button
+                                                variant="primary"
+                                                className="button-spacing"
+                                                title="Open gRPC chat"
+                                                onClick={() => moveToSpecificChatGrpcPage(u.id)}
+                                            >
+                                                <i className="bi bi-chat-fill"></i>
+                                                <span className="action-label"> gRPC</span>
                                             </Button>
                                         </>
                                     )}

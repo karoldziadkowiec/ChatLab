@@ -1,4 +1,4 @@
-﻿using ChatLab.CoreService.SSE;
+﻿using ChatLab.CoreService.RealTime.SSE.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ChatLab.CoreService.Controllers

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import ApiURL from '../../config/ApiConfig';
+import ApiCoreURL from '../../config/ApiCoreConfig';
 import AccountService from './AccountService';
 import CommunicationTechnology from '../../models/interfaces/CommunicationTechnology';
 import CommunicationTechnologyCreateDTO from '../../models/dtos/CommunicationTechnologyCreateDTO';
@@ -8,7 +8,7 @@ const CommunicationTechnologyService = {
     async getCommunicationTechnologies(): Promise<CommunicationTechnology[]> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<CommunicationTechnology[]>(`${ApiURL}/communication-technologies`, {
+            const response = await axios.get<CommunicationTechnology[]>(`${ApiCoreURL}/communication-technologies`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -29,7 +29,7 @@ const CommunicationTechnologyService = {
     async getCommunicationTechnologyCount(): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiURL}/communication-technologies/count`, {
+            const response = await axios.get<number>(`${ApiCoreURL}/communication-technologies/count`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -50,7 +50,7 @@ const CommunicationTechnologyService = {
     async getCommunicationTechnologyId(name: string): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiURL}/communication-technologies/id/${name}`, {
+            const response = await axios.get<number>(`${ApiCoreURL}/communication-technologies/id/${name}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -71,7 +71,7 @@ const CommunicationTechnologyService = {
     async getCommunicationTechnologyName(techId: number): Promise<string> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<string>(`${ApiURL}/communication-technologies/name/${techId}`, {
+            const response = await axios.get<string>(`${ApiCoreURL}/communication-technologies/name/${techId}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -92,7 +92,7 @@ const CommunicationTechnologyService = {
     async checkCommunicationTechnologyExists(name: string): Promise<boolean> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<boolean>(`${ApiURL}/communication-technologies/check/name/${name}`, {
+            const response = await axios.get<boolean>(`${ApiCoreURL}/communication-technologies/check/name/${name}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -113,7 +113,7 @@ const CommunicationTechnologyService = {
     async createCommunicationTechnology(communicationTechnologyCreateDTO: CommunicationTechnologyCreateDTO): Promise<void> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            await axios.post(`${ApiURL}/communication-technologies`, communicationTechnologyCreateDTO, {
+            await axios.post(`${ApiCoreURL}/communication-technologies`, communicationTechnologyCreateDTO, {
                 headers: {
                     'Authorization': authorizationHeader
                 }

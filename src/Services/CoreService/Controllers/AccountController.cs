@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ChatLab.CoreService.Controllers
 {
-    [Route("api/account")]
+    [Route("api/core/account")]
     [ApiController]
     public class AccountController : ControllerBase
     {
@@ -17,7 +17,7 @@ namespace ChatLab.CoreService.Controllers
             _accountService = accountService;
         }
 
-        // POST: api/account/register
+        // POST: api/core/account/register
         [AllowAnonymous]
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
@@ -39,7 +39,7 @@ namespace ChatLab.CoreService.Controllers
             }
         }
 
-        // POST: api/account/login
+        // POST: api/core/account/login
         [AllowAnonymous]
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
@@ -61,7 +61,7 @@ namespace ChatLab.CoreService.Controllers
             }
         }
 
-        // GET: api/account/roles
+        // GET: api/core/account/roles
         [Authorize(Policy = "AdminRights")]
         [HttpGet("roles")]
         public async Task<ActionResult<IEnumerable<string>>> GetRoles()
@@ -70,7 +70,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(roles);
         }
 
-        // POST: api/account/roles/make-admin/:userId
+        // POST: api/core/account/roles/make-admin/:userId
         [Authorize(Policy = "AdminRights")]
         [HttpPost("roles/make-admin/{userId}")]
         public async Task<IActionResult> MakeAnAdmin(string userId)
@@ -79,7 +79,7 @@ namespace ChatLab.CoreService.Controllers
             return NoContent();
         }
 
-        // POST: api/account/roles/make-user/:userId
+        // POST: api/core/account/roles/make-user/:userId
         [Authorize(Policy = "AdminRights")]
         [HttpPost("roles/make-user/{userId}")]
         public async Task<IActionResult> DemoteFromAdmin(string userId)

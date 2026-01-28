@@ -1,5 +1,5 @@
 import axios from 'axios';
-import ApiURL from '../../config/ApiConfig';
+import ApiCoreURL from '../../config/ApiCoreConfig';
 import AccountService from './AccountService';
 import UserFollow from '../../models/interfaces/UserFollow';
 import UserFollowCreateDTO from '../../models/dtos/UserFollowCreateDTO';
@@ -8,7 +8,7 @@ const UserFollowService = {
     async getUserFollowById(userFollowId: number): Promise<UserFollow> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<UserFollow>(`${ApiURL}/user-followers/${userFollowId}`, {
+            const response = await axios.get<UserFollow>(`${ApiCoreURL}/user-followers/${userFollowId}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -29,7 +29,7 @@ const UserFollowService = {
     async getUserFollowers(): Promise<UserFollow[]> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<UserFollow[]>(`${ApiURL}/user-followers`, {
+            const response = await axios.get<UserFollow[]>(`${ApiCoreURL}/user-followers`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -50,7 +50,7 @@ const UserFollowService = {
     async getUserFollowCount(): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiURL}/user-followers/count`, {
+            const response = await axios.get<number>(`${ApiCoreURL}/user-followers/count`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -71,7 +71,7 @@ const UserFollowService = {
     async getUserFollowedForUser(userId: string): Promise<UserFollow[]> {
         try {
         const authorizationHeader = await AccountService.getAuthorizationHeader();
-        const response = await axios.get<UserFollow[]>(`${ApiURL}/user-followers/followed/${userId}`, {
+        const response = await axios.get<UserFollow[]>(`${ApiCoreURL}/user-followers/followed/${userId}`, {
             headers: {
             'Authorization': authorizationHeader
             }
@@ -92,7 +92,7 @@ const UserFollowService = {
     async getUserFollowedForUserCount(userId: string): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiURL}/user-followers/followed/count/${userId}`, {
+            const response = await axios.get<number>(`${ApiCoreURL}/user-followers/followed/count/${userId}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -113,7 +113,7 @@ const UserFollowService = {
     async getUserFollowersForUser(userId: string): Promise<UserFollow[]> {
         try {
         const authorizationHeader = await AccountService.getAuthorizationHeader();
-        const response = await axios.get<UserFollow[]>(`${ApiURL}/user-followers/followers/${userId}`, {
+        const response = await axios.get<UserFollow[]>(`${ApiCoreURL}/user-followers/followers/${userId}`, {
             headers: {
             'Authorization': authorizationHeader
             }
@@ -134,7 +134,7 @@ const UserFollowService = {
     async getUserFollowersForUserCount(userId: string): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiURL}/user-followers/followers/count/${userId}`, {
+            const response = await axios.get<number>(`${ApiCoreURL}/user-followers/followers/count/${userId}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -155,7 +155,7 @@ const UserFollowService = {
     async getUserFollowIdBetweenUsers(followerId: string, followedId: string): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiURL}/user-followers/between/${followerId}/${followedId}`, {
+            const response = await axios.get<number>(`${ApiCoreURL}/user-followers/between/${followerId}/${followedId}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -176,7 +176,7 @@ const UserFollowService = {
     async createUserFollow(dto: UserFollowCreateDTO): Promise<void> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            await axios.post(`${ApiURL}/user-followers`, dto, {
+            await axios.post(`${ApiCoreURL}/user-followers`, dto, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -196,7 +196,7 @@ const UserFollowService = {
     async removeUserFollow(userFollowId: number): Promise<void> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            await axios.delete(`${ApiURL}/user-followers/${userFollowId}`, {
+            await axios.delete(`${ApiCoreURL}/user-followers/${userFollowId}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }

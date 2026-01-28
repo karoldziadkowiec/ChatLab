@@ -1,4 +1,4 @@
-import ApiURL from '../../config/ApiConfig';
+import ApiCoreURL from '../../config/ApiCoreConfig';
 
 export default class ChatSseClient {
     private chatId: number;
@@ -12,7 +12,7 @@ export default class ChatSseClient {
 
     connect() {
         this.eventSource = new EventSource(
-            `${ApiURL}/chat/stream?chatId=${this.chatId}`
+            `${ApiCoreURL}/chat/stream?chatId=${this.chatId}`
         );
 
         this.eventSource.onmessage = (event) => {

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ChatLab.CoreService.Controllers
 {
-    [Route("api/communication-technologies")]
+    [Route("api/core/communication-technologies")]
     [ApiController]
     public class CommunicationTechnologyController : ControllerBase
     {
@@ -20,7 +20,7 @@ namespace ChatLab.CoreService.Controllers
             _mapper = mapper;
         }
 
-        // GET: api/communication-technologies
+        // GET: api/core/communication-technologies
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CommunicationTechnologyDTO>>> GetCommunicationTechnologies()
@@ -30,7 +30,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(communicationTechnologyDtos);
         }
 
-        // GET: api/communication-technologies/count
+        // GET: api/core/communication-technologies/count
         [Authorize(Policy = "AdminRights")]
         [HttpGet("count")]
         public async Task<IActionResult> GetCommunicationTechnologyCount()
@@ -39,7 +39,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(count);
         }
 
-        // GET: api/communication-technologies/id/:name
+        // GET: api/core/communication-technologies/id/:name
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("id/{name}")]
         public async Task<IActionResult> GetCommunicationTechnologyId(string name)
@@ -48,7 +48,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(techId);
         }
 
-        // GET: api/communication-technologies/name/:technologyId
+        // GET: api/core/communication-technologies/name/:technologyId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("name/{technologyId}")]
         public async Task<IActionResult> GetCommunicationTechnologyName(int technologyId)
@@ -60,7 +60,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(techName);
         }
 
-        // GET: api/communication-technologies/check/name/:name
+        // GET: api/core/communication-technologies/check/name/:name
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("check/name/{name}")]
         public async Task<IActionResult> CheckCommunicationTechnologyExists(string name)
@@ -69,7 +69,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(isExists);
         }
 
-        // POST: api/communication-technologies
+        // POST: api/core/communication-technologies
         [Authorize(Policy = "AdminRights")]
         [HttpPost]
         public async Task<ActionResult> CreateCommunicationTechnology([FromBody] CommunicationTechnologyDTO communicationTechnologyDTO)

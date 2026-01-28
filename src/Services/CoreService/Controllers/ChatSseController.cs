@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ChatLab.CoreService.Controllers
 {
     [ApiController]
-    [Route("api/chat")]
+    [Route("api/core/chat")]
     public class ChatSseController : ControllerBase
     {
         private readonly IChatSseService _sseService;

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import ApiURL from '../../config/ApiConfig';
+import ApiCoreURL from '../../config/ApiCoreConfig';
 import AccountService from './AccountService';
 import Message from '../../models/interfaces/Message';
 import MessageSendDTO from '../../models/dtos/MessageSendDTO';
@@ -8,7 +8,7 @@ const MessageService = {
     async getMessageById(messageId: number): Promise<Message> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<Message>(`${ApiURL}/messages/${messageId}`, {
+            const response = await axios.get<Message>(`${ApiCoreURL}/messages/${messageId}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -29,7 +29,7 @@ const MessageService = {
     async getAllMessages(): Promise<Message[]> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<Message[]>(`${ApiURL}/messages`, {
+            const response = await axios.get<Message[]>(`${ApiCoreURL}/messages`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -50,7 +50,7 @@ const MessageService = {
     async getAllMessagesCount(): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiURL}/messages/count`, {
+            const response = await axios.get<number>(`${ApiCoreURL}/messages/count`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -71,7 +71,7 @@ const MessageService = {
     async getMessagesForChat(chatId: number): Promise<Message[]> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<Message[]>(`${ApiURL}/messages/chat/${chatId}`, {
+            const response = await axios.get<Message[]>(`${ApiCoreURL}/messages/chat/${chatId}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -92,7 +92,7 @@ const MessageService = {
     async getMessagesForChatCount(chatId: number): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiURL}/messages/chat/${chatId}/count`, {
+            const response = await axios.get<number>(`${ApiCoreURL}/messages/chat/${chatId}/count`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -113,7 +113,7 @@ const MessageService = {
     async getLastMessageDateForChat(chatId: number): Promise<string> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<string>(`${ApiURL}/messages/chat/${chatId}/last-message-date`, {
+            const response = await axios.get<string>(`${ApiCoreURL}/messages/chat/${chatId}/last-message-date`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -134,7 +134,7 @@ const MessageService = {
     async sendMessage(dto: MessageSendDTO): Promise<void> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            await axios.post(`${ApiURL}/messages`, dto, {
+            await axios.post(`${ApiCoreURL}/messages`, dto, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -154,7 +154,7 @@ const MessageService = {
     async deleteMessage(messageId: number): Promise<void> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            await axios.delete(`${ApiURL}/messages/${messageId}`, {
+            await axios.delete(`${ApiCoreURL}/messages/${messageId}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }

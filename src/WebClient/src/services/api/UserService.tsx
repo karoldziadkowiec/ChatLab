@@ -1,5 +1,5 @@
 import axios from 'axios';
-import ApiURL from '../../config/ApiConfig';
+import ApiCoreURL from '../../config/ApiCoreConfig';
 import AccountService from '../../services/api/AccountService';
 import UserDTO from '../../models/dtos/UserDTO';
 import UserUpdateDTO from '../../models/dtos/UserUpdateDTO';
@@ -10,7 +10,7 @@ const UserService = {
   async getUser(userId: string): Promise<UserDTO> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      const response = await axios.get<UserDTO>(`${ApiURL}/users/${userId}`, {
+      const response = await axios.get<UserDTO>(`${ApiCoreURL}/users/${userId}`, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -31,7 +31,7 @@ const UserService = {
   async getUsers(): Promise<UserDTO[]> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      const response = await axios.get<UserDTO[]>(`${ApiURL}/users`, {
+      const response = await axios.get<UserDTO[]>(`${ApiCoreURL}/users`, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -52,7 +52,7 @@ const UserService = {
   async getOnlyUsers(): Promise<UserDTO[]> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      const response = await axios.get<UserDTO[]>(`${ApiURL}/users/role/user`, {
+      const response = await axios.get<UserDTO[]>(`${ApiCoreURL}/users/role/user`, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -73,7 +73,7 @@ const UserService = {
   async getOnlyAdmins(): Promise<UserDTO[]> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      const response = await axios.get<UserDTO[]>(`${ApiURL}/users/role/admin`, {
+      const response = await axios.get<UserDTO[]>(`${ApiCoreURL}/users/role/admin`, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -94,7 +94,7 @@ const UserService = {
   async getUserRole(userId: string): Promise<string> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      const response = await axios.get<string>(`${ApiURL}/users/${userId}/role`, {
+      const response = await axios.get<string>(`${ApiCoreURL}/users/${userId}/role`, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -115,7 +115,7 @@ const UserService = {
   async getUserCount(): Promise<number> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      const response = await axios.get<number>(`${ApiURL}/users/count`, {
+      const response = await axios.get<number>(`${ApiCoreURL}/users/count`, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -136,7 +136,7 @@ const UserService = {
   async updateUser(userId: string, dto: UserUpdateDTO): Promise<void> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      await axios.put(`${ApiURL}/users/${userId}`, dto, {
+      await axios.put(`${ApiCoreURL}/users/${userId}`, dto, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -156,7 +156,7 @@ const UserService = {
   async resetUserPassword(userId: string, dto: UserResetPasswordDTO): Promise<void> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      await axios.put(`${ApiURL}/users/reset-password/${userId}`, dto, {
+      await axios.put(`${ApiCoreURL}/users/reset-password/${userId}`, dto, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -176,7 +176,7 @@ const UserService = {
   async deleteUser(userId: string): Promise<void> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      await axios.delete(`${ApiURL}/users/${userId}`, {
+      await axios.delete(`${ApiCoreURL}/users/${userId}`, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -196,7 +196,7 @@ const UserService = {
   async getUserChats(userId: string): Promise<ChatModel[]> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      const response = await axios.get<ChatModel[]>(`${ApiURL}/users/${userId}/chats`, {
+      const response = await axios.get<ChatModel[]>(`${ApiCoreURL}/users/${userId}/chats`, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -218,7 +218,7 @@ const UserService = {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
 
-      const response = await axios.get(`${ApiURL}/users/export`, {
+      const response = await axios.get(`${ApiCoreURL}/users/export`, {
         headers: {
           'Authorization': authorizationHeader
         },

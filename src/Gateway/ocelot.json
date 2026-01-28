@@ -1,49 +1,61 @@
 {
   "Routes": [
     {
-      "DownstreamPathTemplate": "/api/health",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
-      "UpstreamPathTemplate": "/api/core/health",
-      "UpstreamHttpMethod": ["GET"]
-    },
-    {
-      "DownstreamPathTemplate": "/api/{everything}",
+      "DownstreamPathTemplate": "/api/core/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
       "UpstreamPathTemplate": "/api/core/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
     },
     {
-      "DownstreamPathTemplate": "/api/rt/{transport}/health",
+      "DownstreamPathTemplate": "/rt/signalr",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8010 }],
-      "UpstreamPathTemplate": "/rt/{transport}/api/health",
-      "UpstreamHttpMethod": ["GET"]
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
+      "UpstreamPathTemplate": "/rt/signalr",
+      "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
     },
     {
-      "DownstreamPathTemplate": "/api/rt/transports",
+      "DownstreamPathTemplate": "/rt/signalr/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8010 }],
-      "UpstreamPathTemplate": "/rt/transports",
-      "UpstreamHttpMethod": ["GET"]
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
+      "UpstreamPathTemplate": "/rt/signalr/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
     },
     {
-      "DownstreamPathTemplate": "/api/rt/{everything}",
+      "DownstreamPathTemplate": "/rt/ws",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8010 }],
-      "UpstreamPathTemplate": "/rt/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
+      "UpstreamPathTemplate": "/rt/ws",
+      "UpstreamHttpMethod": ["GET", "OPTIONS"]
     },
     {
-      "DownstreamPathTemplate": "/{everything}",
+      "DownstreamPathTemplate": "/rt/ws/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8016 }],
-      "UpstreamPathTemplate": "/rt/socketio/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
+      "UpstreamPathTemplate": "/rt/ws/{everything}",
+      "UpstreamHttpMethod": ["GET", "OPTIONS"]
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:8000"
+    "BaseUrl": "http://localhost:8000",
+    "RequestIdKey": "X-Request-Id",
+    "RateLimitOptions": {
+      "ClientIdHeader": "X-Client-Id",
+      "EnableRateLimiting": true,
+      "Period": "1s",
+      "PeriodTimespan": 1,
+      "Limit": 50,
+      "HttpStatusCode": 429,
+      "QuotaExceededMessage": "Too many requests"
+    },
+    "HttpHandlerOptions": {
+      "UseProxy": false,
+      "AllowAutoRedirect": false,
+      "UseCookieContainer": false,
+      "MaxConnectionsPerServer": 100
+    }
   }
 }

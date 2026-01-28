@@ -1,5 +1,5 @@
 import axios from 'axios';
-import ApiURL from '../../config/ApiConfig';
+import ApiCoreURL from '../../config/ApiCoreConfig';
 import AccountService from './AccountService';
 import ChatModel from '../../models/interfaces/Chat';
 import ChatCreateDTO from '../../models/dtos/ChatCreateDTO';
@@ -8,7 +8,7 @@ const ChatService = {
     async getChatById(chatId: number): Promise<ChatModel> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<ChatModel>(`${ApiURL}/chats/${chatId}`, {
+            const response = await axios.get<ChatModel>(`${ApiCoreURL}/chats/${chatId}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -29,7 +29,7 @@ const ChatService = {
     async getChats(): Promise<ChatModel[]> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<ChatModel[]>(`${ApiURL}/chats`, {
+            const response = await axios.get<ChatModel[]>(`${ApiCoreURL}/chats`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -50,7 +50,7 @@ const ChatService = {
     async getChatCount(): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiURL}/chats/count`, {
+            const response = await axios.get<number>(`${ApiCoreURL}/chats/count`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -71,7 +71,7 @@ const ChatService = {
     async getChatIdBetweenUsers(user1Id: string, user2Id: string): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiURL}/chats/between/${user1Id}/${user2Id}`, {
+            const response = await axios.get<number>(`${ApiCoreURL}/chats/between/${user1Id}/${user2Id}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -92,7 +92,7 @@ const ChatService = {
     async createChat(dto: ChatCreateDTO): Promise<void> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            await axios.post(`${ApiURL}/chats`, dto, {
+            await axios.post(`${ApiCoreURL}/chats`, dto, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -112,7 +112,7 @@ const ChatService = {
     async deleteChat(chatId: number): Promise<void> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            await axios.delete(`${ApiURL}/chats/${chatId}`, {
+            await axios.delete(`${ApiCoreURL}/chats/${chatId}`, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
@@ -133,7 +133,7 @@ const ChatService = {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
 
-            const response = await axios.get(`${ApiURL}/chats/export`, {
+            const response = await axios.get(`${ApiCoreURL}/chats/export`, {
                 headers: {
                     'Authorization': authorizationHeader
                 },

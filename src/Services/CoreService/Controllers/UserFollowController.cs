@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ChatLab.CoreService.Controllers
 {
-    [Route("api/user-followers")]
+    [Route("api/core/user-followers")]
     [ApiController]
     public class UserFollowController : ControllerBase
     {
@@ -20,7 +20,7 @@ namespace ChatLab.CoreService.Controllers
             _mapper = mapper;
         }
 
-        // GET: api/user-followers/:userFollowId
+        // GET: api/core/user-followers/:userFollowId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("{userFollowId}")]
         public async Task<IActionResult> GetUserFollowById(int userFollowId)
@@ -33,7 +33,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(userFollowDto);
         }
 
-        // GET: api/user-followers
+        // GET: api/core/user-followers
         [Authorize(Policy = "AdminRights")]
         [HttpGet]
         public async Task<IActionResult> GetUserFollowers()
@@ -43,7 +43,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(userFollowDtos);
         }
 
-        // GET: api/user-followers/count
+        // GET: api/core/user-followers/count
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("count")]
         public async Task<IActionResult> GetUserFollowCount()
@@ -52,7 +52,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(count);
         }
 
-        // GET: api/user-followers/followed/:userId
+        // GET: api/core/user-followers/followed/:userId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("followed/{userId}")]
         public async Task<ActionResult<IEnumerable<UserFollow>>> GetUserFollowedForUser(string userId)
@@ -62,7 +62,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(userFollowedDtos);
         }
 
-        // GET: api/user-followers/followed/count/:userId
+        // GET: api/core/user-followers/followed/count/:userId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("followed/count/{userId}")]
         public async Task<IActionResult> GetUserFollowedForUserCount(string userId)
@@ -71,7 +71,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(count);
         }
 
-        // GET: api/user-followers/followers/:userId
+        // GET: api/core/user-followers/followers/:userId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("followers/{userId}")]
         public async Task<ActionResult<IEnumerable<UserFollow>>> GetUserFollowersForUser(string userId)
@@ -81,7 +81,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(userFollowersDtos);
         }
 
-        // GET: api/user-followers/followers/count/:userId
+        // GET: api/core/user-followers/followers/count/:userId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("followers/count/{userId}")]
         public async Task<IActionResult> GetUserFollowersForUserCount(string userId)
@@ -90,7 +90,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(count);
         }
 
-        // GET: api/user-followers/between/:followerId/:followedId
+        // GET: api/core/user-followers/between/:followerId/:followedId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("between/{followerId}/{followedId}")]
         public async Task<IActionResult> GetUserFollowIdBetweenUsers(string followerId, string followedId)
@@ -99,7 +99,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(userFollowId);
         }
 
-        // POST: api/user-followers
+        // POST: api/core/user-followers
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpPost]
         public async Task<IActionResult> CreateUserFollow([FromBody] UserFollowCreateDTO dto)
@@ -109,7 +109,7 @@ namespace ChatLab.CoreService.Controllers
             return CreatedAtAction(nameof(GetUserFollowById), new { userFollowId = userFollow.Id }, userFollow);
         }
 
-        // DELETE: api/user-followers/:userFollowId
+        // DELETE: api/core/user-followers/:userFollowId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpDelete("{userFollowId}")]
         public async Task<IActionResult> RemoveUserFollow(int userFollowId)

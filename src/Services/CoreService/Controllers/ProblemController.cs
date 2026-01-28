@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ChatLab.CoreService.Controllers
 {
-    [Route("api/problems")]
+    [Route("api/core/problems")]
     [ApiController]
     public class ProblemController : ControllerBase
     {
@@ -20,7 +20,7 @@ namespace ChatLab.CoreService.Controllers
             _mapper = mapper;
         }
 
-        // GET: api/problems/:problemId
+        // GET: api/core/problems/:problemId
         [Authorize(Policy = "AdminRights")]
         [HttpGet("{problemId}")]
         public async Task<ActionResult<ProblemDTO>> GetProblem(int problemId)
@@ -33,7 +33,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(problemDto);
         }
 
-        // GET: api/problems
+        // GET: api/core/problems
         [Authorize(Policy = "AdminRights")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProblemDTO>>> GetAllProblems()
@@ -43,7 +43,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(problemDtos);
         }
 
-        // GET: api/problems/solved
+        // GET: api/core/problems/solved
         [Authorize(Policy = "AdminRights")]
         [HttpGet("solved")]
         public async Task<ActionResult<IEnumerable<ProblemDTO>>> GetSolvedProblems()
@@ -53,7 +53,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(solvedProblemsDtos);
         }
 
-        // GET: api/problems/solved/count
+        // GET: api/core/problems/solved/count
         [Authorize(Policy = "AdminRights")]
         [HttpGet("solved/count")]
         public async Task<IActionResult> GetSolvedProblemCount()
@@ -62,7 +62,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(count);
         }
 
-        // GET: api/problems/unsolved
+        // GET: api/core/problems/unsolved
         [Authorize(Policy = "AdminRights")]
         [HttpGet("unsolved")]
         public async Task<ActionResult<IEnumerable<ProblemDTO>>> GetUnsolvedProblems()
@@ -72,7 +72,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(unsolvedProblemsDtos);
         }
 
-        // GET: api/problems/unsolved/count
+        // GET: api/core/problems/unsolved/count
         [Authorize(Policy = "AdminRights")]
         [HttpGet("unsolved/count")]
         public async Task<IActionResult> GetUnsolvedProblemCount()
@@ -81,7 +81,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(count);
         }
 
-        // POST: api/problems
+        // POST: api/core/problems
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpPost]
         public async Task<ActionResult> CreateProblem([FromBody] ProblemCreateDTO dto)
@@ -96,7 +96,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(createdDto);
         }
 
-        // PUT: api/problems/:problemId
+        // PUT: api/core/problems/:problemId
         [Authorize(Policy = "AdminRights")]
         [HttpPut("{problemId}")]
         public async Task<IActionResult> CheckProblemSolved(int problemId, [FromBody] ProblemDTO dto)
@@ -112,7 +112,7 @@ namespace ChatLab.CoreService.Controllers
             return NoContent();
         }
 
-        // GET: api/problems/export
+        // GET: api/core/problems/export
         [Authorize(Policy = "AdminRights")]
         [HttpGet("export")]
         public async Task<IActionResult> ExportProblemsToCsv()

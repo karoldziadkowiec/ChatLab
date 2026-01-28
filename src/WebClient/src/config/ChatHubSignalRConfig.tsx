@@ -1,6 +1,7 @@
-const ApiPORT: number = 8001;
+import GatewayPORT from "./GatewayConfig";
 
-const HubName: string = 'signalr-chathub';
+const gatewayPort = GatewayPORT;
+const HubName: string = 'rt/signalr';
 
-const ChatHubURL: string = `http://localhost:${ApiPORT}/${HubName}`;
+const ChatHubURL: string = `http://localhost:${gatewayPort}/${HubName}`;
 export default ChatHubURL;

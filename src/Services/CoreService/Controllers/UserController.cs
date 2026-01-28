@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ChatLab.CoreService.Controllers
 {
-    [Route("api/users")]
+    [Route("api/core/users")]
     [ApiController]
     public class UserController : ControllerBase
     {
@@ -21,7 +21,7 @@ namespace ChatLab.CoreService.Controllers
             _mapper = mapper;
         }
 
-        // GET: api/users/:userId
+        // GET: api/core/users/:userId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("{userId}")]
         public async Task<IActionResult> GetUser(string userId)
@@ -34,7 +34,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(userDTO);
         }
 
-        // GET: api/users
+        // GET: api/core/users
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet]
         public async Task<IActionResult> GetUsers()
@@ -44,7 +44,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(userDTOs);
         }
 
-        // GET: api/users/role/user
+        // GET: api/core/users/role/user
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("role/user")]
         public async Task<IActionResult> GetOnlyUsers()
@@ -54,7 +54,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(onlyUserDTOs);
         }
 
-        // GET: api/users/role/admin
+        // GET: api/core/users/role/admin
         [Authorize(Policy = "AdminRights")]
         [HttpGet("role/admin")]
         public async Task<IActionResult> GetOnlyAdmins()
@@ -64,7 +64,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(onlyAdminDTOs);
         }
 
-        // GET: api/users/:userId/role
+        // GET: api/core/users/:userId/role
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("{userId}/role")]
         public async Task<IActionResult> GetUserRole(string userId)
@@ -73,7 +73,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(role);
         }
 
-        // GET: api/users/count
+        // GET: api/core/users/count
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("count")]
         public async Task<IActionResult> GetUserCount()
@@ -82,7 +82,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(count);
         }
 
-        // PUT: api/users/:userId
+        // PUT: api/core/users/:userId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpPut("{userId}")]
         public async Task<IActionResult> UpdateUser(string userId, [FromBody]UserUpdateDTO dto)
@@ -106,7 +106,7 @@ namespace ChatLab.CoreService.Controllers
             return NoContent();
         }
 
-        // PUT: api/users/reset-password/:userId
+        // PUT: api/core/users/reset-password/:userId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpPut("reset-password/{userId}")]
         public async Task<IActionResult> ResetUserPassword(string userId, [FromBody] UserResetPasswordDTO dto)
@@ -132,7 +132,7 @@ namespace ChatLab.CoreService.Controllers
             return NoContent();
         }
 
-        // DELETE: api/users/:userId
+        // DELETE: api/core/users/:userId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpDelete("{userId}")]
         public async Task<IActionResult> DeleteUser(string userId)
@@ -156,7 +156,7 @@ namespace ChatLab.CoreService.Controllers
             return NoContent();
         }
 
-        // GET: api/users/:userId/chats
+        // GET: api/core/users/:userId/chats
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("{userId}/chats")]
         public async Task<ActionResult<IEnumerable<Chat>>> GetUserChats(string userId)
@@ -166,7 +166,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(userChatsDtos);
         }
 
-        // GET: api/users/export
+        // GET: api/core/users/export
         [Authorize(Policy = "AdminRights")]
         [HttpGet("export")]
         public async Task<IActionResult> ExportUsersToCsv()

@@ -187,14 +187,14 @@ namespace ChatLab.CoreService
             app.MapControllers();
 
             // Use SignalR
-            app.MapHub<ChatHub>("/signalr-chathub");
+            app.MapHub<ChatHub>("/rt/signalr");
 
             // Use and map WebSockets
             app.UseWebSockets(new WebSocketOptions
             {
                 KeepAliveInterval = TimeSpan.FromSeconds(30)
             });
-            app.Map("/ws", appBuilder =>
+            app.Map("/rt/ws", appBuilder =>
             {
                 appBuilder.UseMiddleware<WebSocketMiddleware>();
             });

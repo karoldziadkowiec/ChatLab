@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import ApiURL from '../../config/ApiConfig';
+import ApiCoreURL from '../../config/ApiCoreConfig';
 import LoginDTO from '../../models/dtos/LoginDTO';
 import RegisterDTO from '../../models/dtos/RegisterDTO';
 import jwtDecode from 'jwt-decode'
@@ -10,7 +10,7 @@ import { RoutePaths } from '../../routes/RoutePaths';
 const AccountService = {
   async registerUser(registerDTO: RegisterDTO) {
     try {
-      const response = await axios.post(`${ApiURL}/account/register`, registerDTO);
+      const response = await axios.post(`${ApiCoreURL}/account/register`, registerDTO);
       return response.data;
     }
     catch (error) {
@@ -26,7 +26,7 @@ const AccountService = {
 
   async login(loginDTO: LoginDTO) {
     try {
-      const response = await axios.post(`${ApiURL}/account/login`, loginDTO);
+      const response = await axios.post(`${ApiCoreURL}/account/login`, loginDTO);
       const token = response.data;
 
       if (token) {
@@ -105,7 +105,7 @@ const AccountService = {
   async getRoles(): Promise<string[]> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      const response = await axios.get<string[]>(`${ApiURL}/account/roles`, {
+      const response = await axios.get<string[]>(`${ApiCoreURL}/account/roles`, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -175,7 +175,7 @@ const AccountService = {
   async makeAnAdmin(userId: string): Promise<void> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      await axios.post(`${ApiURL}/account/roles/make-admin/${userId}`, userId, {
+      await axios.post(`${ApiCoreURL}/account/roles/make-admin/${userId}`, userId, {
         headers: {
           'Authorization': authorizationHeader
         }
@@ -195,7 +195,7 @@ const AccountService = {
   async makeAnUser(userId: string): Promise<void> {
     try {
       const authorizationHeader = await AccountService.getAuthorizationHeader();
-      await axios.post(`${ApiURL}/account/roles/make-user/${userId}`, userId, {
+      await axios.post(`${ApiCoreURL}/account/roles/make-user/${userId}`, userId, {
         headers: {
           'Authorization': authorizationHeader
         }

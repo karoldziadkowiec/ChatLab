@@ -1,5 +1,6 @@
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using Ocelot.Provider.Polly;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,23 +8,28 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration
     .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 
-// CORS for local dev (adjust as needed)
+// CORS for local dev (restrict origin & allow credentials)
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+    options.AddPolicy("WebClient", policy =>
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials());
 });
 
-builder.Services.AddOcelot(builder.Configuration);
+builder.Services.AddOcelot(builder.Configuration)
+    .AddPolly();
 
 var app = builder.Build();
 
-app.UseCors();
+// Use named CORS policy so credentials are allowed
+app.UseCors("WebClient");
+
+// Enable WebSockets so Ocelot can proxy SignalR WS upgrades
+app.UseWebSockets();
 
 // Ocelot gateway
 await app.UseOcelot();
-
-// Health endpoint for gateway
-app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "gateway" }));
 
 app.Run();

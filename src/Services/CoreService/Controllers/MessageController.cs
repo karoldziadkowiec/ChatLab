@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ChatLab.CoreService.Controllers
 {
-    [Route("api/messages")]
+    [Route("api/core/messages")]
     [ApiController]
     public class MessageController : ControllerBase
     {
@@ -20,7 +20,7 @@ namespace ChatLab.CoreService.Controllers
             _mapper = mapper;
         }
 
-        // GET: api/messages/:messageId
+        // GET: api/core/messages/:messageId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("{messageId}")]
         public async Task<IActionResult> GetMessageById(int messageId)
@@ -33,7 +33,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(messageDto);
         }
 
-        // GET: api/messages
+        // GET: api/core/messages
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet]
         public async Task<IActionResult> GetAllMessages()
@@ -43,7 +43,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(messageDtos);
         }
 
-        // GET: api/messages/count
+        // GET: api/core/messages/count
         [Authorize(Policy = "AdminRights")]
         [HttpGet("count")]
         public async Task<IActionResult> GetAllMessagesCount()
@@ -52,7 +52,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(count);
         }
 
-        // GET: api/messages/chat/:chatId
+        // GET: api/core/messages/chat/:chatId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("chat/{chatId}")]
         public async Task<IActionResult> GetMessagesForChat(int chatId)
@@ -62,7 +62,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(messageDtos);
         }
 
-        // GET: api/messages/chat/:chatId/count
+        // GET: api/core/messages/chat/:chatId/count
         [Authorize(Policy = "AdminRights")]
         [HttpGet("chat/{chatId}/count")]
         public async Task<IActionResult> GetMessagesForChatCount(int chatId)
@@ -71,7 +71,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(count);
         }
 
-        // GET: api/messages/chat/:chatId/last-message-date
+        // GET: api/core/messages/chat/:chatId/last-message-date
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpGet("chat/{chatId}/last-message-date")]
         public async Task<IActionResult> GetLastMessageDateForChat(int chatId)
@@ -80,7 +80,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(lastMessageDate);
         }
 
-        // POST: api/messages
+        // POST: api/core/messages
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpPost]
         public async Task<IActionResult> SendMessage([FromBody] MessageSendDTO messageDto)
@@ -89,7 +89,7 @@ namespace ChatLab.CoreService.Controllers
             return Ok(messageDto);
         }
 
-        // DELETE: api/messages/:messageId
+        // DELETE: api/core/messages/:messageId
         [Authorize(Policy = "AdminOrUserRights")]
         [HttpDelete("{messageId}")]
         public async Task<IActionResult> DeleteMessage(int messageId)

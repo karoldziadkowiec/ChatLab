@@ -1,14 +1,7 @@
-using ChatLab.CoreService.DbManager;
-using ChatLab.CoreService.Entities;
-using ChatLab.CoreService.Models.Constants;
-using ChatLab.CoreService.RealTime.GRPC.Services;
-using ChatLab.CoreService.RealTime.SignalR;
-using ChatLab.CoreService.RealTime.SSE.Classes;
-using ChatLab.CoreService.RealTime.SSE.Interfaces;
-using ChatLab.CoreService.Repositories.Classes;
-using ChatLab.CoreService.Repositories.Interfaces;
-using ChatLab.CoreService.Services.Classes;
-using ChatLab.CoreService.Services.Interfaces;
+using ChatLab.ProblemService.DbManager;
+using ChatLab.ProblemService.Entities;
+using ChatLab.ProblemService.Repositories.Classes;
+using ChatLab.ProblemService.Repositories.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
-namespace ChatLab.CoreService
+namespace ChatLab.ProblemService
 {
     public class Program
     {
@@ -31,13 +24,6 @@ namespace ChatLab.CoreService
                 options.UseSqlServer(configuration.GetConnectionString("MSSQLConnectionString") ??
                     throw new InvalidOperationException("Microsoft SQL Server's connection string not found."));
             });
-
-            // Identity with support for roles
-            builder.Services.AddIdentity<User, IdentityRole>()
-                .AddRoles<IdentityRole>()
-                .AddRoleManager<RoleManager<IdentityRole>>()
-                .AddEntityFrameworkStores<AppDbContext>()
-                .AddDefaultTokenProviders();
 
             // Default authentication scheme
             builder.Services.AddAuthentication(options =>
@@ -74,56 +60,14 @@ namespace ChatLab.CoreService
                 };
             });
 
-            // Authorization policies
-            builder.Services.AddAuthorization(options =>
-            {
-                options.AddPolicy("AdminRights", policy =>
-                    policy.RequireRole(Role.Admin));
-                options.AddPolicy("UserRights", policy =>
-                    policy.RequireRole(Role.User));
-                options.AddPolicy("AdminOrUserRights", policy =>
-                    policy.RequireRole(Role.Admin, Role.User));
-            });
-
-            // Services
-            builder.Services.AddScoped<IAccountService, AccountService>();
-            builder.Services.AddScoped<ITokenService, TokenService>();
-            builder.Services.AddScoped<ICookieService, CookieService>();
-            builder.Services.AddScoped<IChatService, ChatService>();
-            builder.Services.AddScoped<IMessageService, MessageService>();
-
             // Repositories
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
-            builder.Services.AddScoped<IUserFollowRepository, UserFollowRepository>();
-            builder.Services.AddScoped<ICommunicationTechnologyRepository, CommunicationTechnologyRepository>();
+            builder.Services.AddScoped<IProblemRepository, ProblemRepository>();
 
             // AutoMapper service
             builder.Services.AddAutoMapper(typeof(Program));
 
-            // Password hasher
-            builder.Services.AddTransient<IPasswordHasher<User>, PasswordHasher<User>>();
-
             // Accessing HttpContext property (cookies)
             builder.Services.AddHttpContextAccessor();
-
-            // Real time chat:
-            // SignalR
-            builder.Services.AddSignalR();
-
-            // WebSockets
-            builder.Services.AddSingleton<WebSocketConnectionManager>();
-            builder.Services.AddScoped<ChatWebSocketHandler>();
-
-            // SSE
-            builder.Services.AddSingleton<IChatSseService, ChatSseService>();
-
-            // gRPC services
-            builder.Services.AddGrpc();
-            builder.Services.AddGrpcReflection();
-            builder.Services.AddHttpClient("CoreSelf", c =>
-            {
-                c.BaseAddress = new Uri("http://localhost:8001");
-            });
 
             // Controller handler
             builder.Services.AddControllers();
@@ -132,7 +76,7 @@ namespace ChatLab.CoreService
             // Swagger authentication
             builder.Services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "ChatLab.CoreService API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "ChatLab.ProblemService API", Version = "v1" });
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Description = @"JWT Authorization header using the Bearer scheme. \r\n\r\n 
@@ -196,30 +140,6 @@ namespace ChatLab.CoreService
             // Endpoints
             app.MapControllers();
 
-            // gRPC endpoints (with gRPC-Web enabled)
-            app.UseGrpcWeb();
-                app.MapGrpcService<ChatGrpcService>()
-                    .EnableGrpcWeb()
-                    .RequireCors("AllowClient")
-                    .RequireAuthorization();
-            if (app.Environment.IsDevelopment())
-            {
-                app.MapGrpcReflectionService();
-            }
-
-            // Use SignalR
-            app.MapHub<ChatHub>("/rt/signalr");
-
-            // Use and map WebSockets
-            app.UseWebSockets(new WebSocketOptions
-            {
-                KeepAliveInterval = TimeSpan.FromSeconds(30)
-            });
-            app.Map("/rt/ws", appBuilder =>
-            {
-                appBuilder.UseMiddleware<WebSocketMiddleware>();
-            });
-
             // Seeders
             using (var scope = app.Services.CreateScope())
             {
@@ -236,18 +156,6 @@ namespace ChatLab.CoreService
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Error while applying migrations.");
-                    throw;
-                }
-
-                try
-                {
-                    logger.LogInformation("Seeding data to database...");
-                    await AppSeeder.Seed(services);
-                    logger.LogInformation("Seeding finished.");
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Error while seeding data to database.");
                     throw;
                 }
             }

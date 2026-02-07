@@ -1,6 +1,6 @@
-﻿using ChatLab.CoreService.Entities;
+﻿using ChatLab.ProblemService.Entities;
 
-namespace ChatLab.CoreService.Repositories.Interfaces
+namespace ChatLab.ProblemService.Repositories.Interfaces
 {
     public interface IProblemRepository
     {

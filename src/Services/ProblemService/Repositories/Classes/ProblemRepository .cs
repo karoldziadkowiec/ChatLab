@@ -1,10 +1,10 @@
-﻿using ChatLab.CoreService.DbManager;
-using ChatLab.CoreService.Entities;
-using ChatLab.CoreService.Repositories.Interfaces;
+﻿using ChatLab.ProblemService.DbManager;
+using ChatLab.ProblemService.Entities;
+using ChatLab.ProblemService.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 
-namespace ChatLab.CoreService.Repositories.Classes
+namespace ChatLab.ProblemService.Repositories.Classes
 {
     public class ProblemRepository : IProblemRepository
     {
@@ -17,15 +17,12 @@ namespace ChatLab.CoreService.Repositories.Classes
 
         public async Task<Problem> GetProblem(int problemId)
         {
-            return await _dbContext.Problems
-                .Include(p => p.Requester)
-                .FirstOrDefaultAsync(p => p.Id == problemId);
+            return await _dbContext.Problems.FirstOrDefaultAsync(p => p.Id == problemId);
         }
 
         public async Task<IEnumerable<Problem>> GetAllProblems()
         {
             return await _dbContext.Problems
-                .Include(p => p.Requester)
                 .OrderByDescending(p => p.CreationDate)
                 .ToListAsync();
         }
@@ -33,7 +30,6 @@ namespace ChatLab.CoreService.Repositories.Classes
         public async Task<IEnumerable<Problem>> GetSolvedProblems()
         {
             return await _dbContext.Problems
-                .Include(p => p.Requester)
                 .Where(p => p.IsSolved == true)
                 .OrderByDescending(p => p.CreationDate)
                 .ToListAsync();
@@ -47,7 +43,6 @@ namespace ChatLab.CoreService.Repositories.Classes
         public async Task<IEnumerable<Problem>> GetUnsolvedProblems()
         {
             return await _dbContext.Problems
-                .Include(p => p.Requester)
                 .Where(pa => pa.IsSolved == false)
                 .OrderByDescending(p => p.CreationDate)
                 .ToListAsync();
@@ -83,11 +78,11 @@ namespace ChatLab.CoreService.Repositories.Classes
         {
             var problems = await GetAllProblems();
             var csv = new StringBuilder();
-            csv.AppendLine("Problem Id,Is Solved,Requester E-mail,Requester First Name,Requester Last Name,Title,Description,Creation Date");
+            csv.AppendLine("Problem Id,Is Solved,Title,Description,Creation Date");
 
             foreach (var problem in problems)
             {
-                csv.AppendLine($"{problem.Id},{problem.IsSolved},{problem.Requester.Email},{problem.Requester.FirstName},{problem.Requester.LastName},{problem.Title},{problem.Description},{problem.CreationDate:yyyy-MM-dd}");
+                csv.AppendLine($"{problem.Id},{problem.IsSolved},{problem.Title},{problem.Description},{problem.CreationDate:yyyy-MM-dd}");
             }
 
             var byteArray = Encoding.UTF8.GetBytes(csv.ToString());

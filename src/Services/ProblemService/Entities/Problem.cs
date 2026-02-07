@@ -1,7 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace ChatLab.CoreService.Entities
+namespace ChatLab.ProblemService.Entities
 {
     public class Problem
     {
@@ -22,11 +21,5 @@ namespace ChatLab.CoreService.Entities
 
         [Required]
         public bool IsSolved { get; set; }
-
-        [Required]
-        public string RequesterId { get; set; }
-
-        [ForeignKey("RequesterId")]
-        public virtual User Requester { get; set; }
     }
 }

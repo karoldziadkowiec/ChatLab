@@ -118,11 +118,6 @@ namespace ChatLab.CoreService.Repositories.Classes
 
             var unknownUserId = unknownUser.Id;
 
-            var problems = await _dbContext.Problems
-                .Where(p => p.RequesterId == userId)
-                .ToListAsync();
-            _dbContext.Problems.RemoveRange(problems);
-
             _dbContext.Users.Remove(user);
             await _dbContext.SaveChangesAsync();
         }

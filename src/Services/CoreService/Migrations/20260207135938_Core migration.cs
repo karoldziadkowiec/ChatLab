@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ChatLab.CoreService.Migrations
 {
     /// <inheritdoc />
-    public partial class Schemamigration : Migration
+    public partial class Coremigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -200,29 +200,6 @@ namespace ChatLab.CoreService.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Problems",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Title = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    CreationDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsSolved = table.Column<bool>(type: "bit", nullable: false),
-                    RequesterId = table.Column<string>(type: "nvarchar(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Problems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Problems_AspNetUsers_RequesterId",
-                        column: x => x.RequesterId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "UserFollowers",
                 columns: table => new
                 {
@@ -360,11 +337,6 @@ namespace ChatLab.CoreService.Migrations
                 column: "SenderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Problems_RequesterId",
-                table: "Problems",
-                column: "RequesterId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_UserFollowers_FollowedId",
                 table: "UserFollowers",
                 column: "FollowedId");
@@ -395,9 +367,6 @@ namespace ChatLab.CoreService.Migrations
 
             migrationBuilder.DropTable(
                 name: "Messages");
-
-            migrationBuilder.DropTable(
-                name: "Problems");
 
             migrationBuilder.DropTable(
                 name: "UserFollowers");

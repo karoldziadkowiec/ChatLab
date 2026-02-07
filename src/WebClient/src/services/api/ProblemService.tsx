@@ -1,18 +1,12 @@
 import axios from 'axios';
-import ApiCoreURL from '../../config/ApiCoreConfig';
-import AccountService from './AccountService';
+import ApiProblemURL from '../../config/ApiProblemConfig';
 import Problem from '../../models/interfaces/Problem';
 import ProblemCreateDTO from '../../models/dtos/ProblemCreateDTO';
 
 const ProblemService = {
     async getProblem(problemId: number): Promise<Problem> {
         try {
-            const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<Problem>(`${ApiCoreURL}/problems/${problemId}`, {
-                headers: {
-                    'Authorization': authorizationHeader
-                }
-            });
+            const response = await axios.get<Problem>(`${ApiProblemURL}/${problemId}`);
             return response.data;
         }
         catch (error) {
@@ -28,12 +22,7 @@ const ProblemService = {
 
     async getAllProblems(): Promise<Problem[]> {
         try {
-            const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<Problem[]>(`${ApiCoreURL}/problems`, {
-                headers: {
-                    'Authorization': authorizationHeader
-                }
-            });
+            const response = await axios.get<Problem[]>(`${ApiProblemURL}`);
             return response.data;
         }
         catch (error) {
@@ -49,12 +38,7 @@ const ProblemService = {
 
     async getSolvedProblems(): Promise<Problem[]> {
         try {
-            const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<Problem[]>(`${ApiCoreURL}/problems/solved`, {
-                headers: {
-                    'Authorization': authorizationHeader
-                }
-            });
+            const response = await axios.get<Problem[]>(`${ApiProblemURL}/solved`);
             return response.data;
         }
         catch (error) {
@@ -70,12 +54,7 @@ const ProblemService = {
 
     async getSolvedProblemCount(): Promise<number> {
         try {
-            const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiCoreURL}/problems/solved/count`, {
-                headers: {
-                    'Authorization': authorizationHeader
-                }
-            });
+            const response = await axios.get<number>(`${ApiProblemURL}/solved/count`);
             return response.data;
         }
         catch (error) {
@@ -91,12 +70,7 @@ const ProblemService = {
 
     async getUnsolvedProblems(): Promise<Problem[]> {
         try {
-            const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<Problem[]>(`${ApiCoreURL}/problems/unsolved`, {
-                headers: {
-                    'Authorization': authorizationHeader
-                }
-            });
+            const response = await axios.get<Problem[]>(`${ApiProblemURL}/unsolved`);
             return response.data;
         }
         catch (error) {
@@ -112,12 +86,7 @@ const ProblemService = {
 
     async getUnsolvedProblemCount(): Promise<number> {
         try {
-            const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.get<number>(`${ApiCoreURL}/problems/unsolved/count`, {
-                headers: {
-                    'Authorization': authorizationHeader
-                }
-            });
+            const response = await axios.get<number>(`${ApiProblemURL}/unsolved/count`);
             return response.data;
         }
         catch (error) {
@@ -133,12 +102,7 @@ const ProblemService = {
 
     async createProblem(dto: ProblemCreateDTO): Promise<void> {
         try {
-            const authorizationHeader = await AccountService.getAuthorizationHeader();
-            await axios.post(`${ApiCoreURL}/problems`, dto, {
-                headers: {
-                    'Authorization': authorizationHeader
-                }
-            });
+            await axios.post(`${ApiProblemURL}`, dto);
         }
         catch (error) {
             if (axios.isAxiosError(error)) {
@@ -153,12 +117,7 @@ const ProblemService = {
 
     async checkProblemSolved(problemId: number, problem: Problem): Promise<void> {
         try {
-            const authorizationHeader = await AccountService.getAuthorizationHeader();
-            await axios.put(`${ApiCoreURL}/problems/${problemId}`, problem, {
-                headers: {
-                    'Authorization': authorizationHeader
-                }
-            });
+            await axios.put(`${ApiProblemURL}/${problemId}`, problem);
         }
         catch (error) {
             if (axios.isAxiosError(error)) {
@@ -173,12 +132,7 @@ const ProblemService = {
 
     async exportProblemsToCsv(): Promise<void> {
         try {
-            const authorizationHeader = await AccountService.getAuthorizationHeader();
-
-            const response = await axios.get(`${ApiCoreURL}/problems/export`, {
-                headers: {
-                    'Authorization': authorizationHeader
-                },
+            const response = await axios.get(`${ApiProblemURL}/export`, {
                 responseType: 'blob'
             });
 

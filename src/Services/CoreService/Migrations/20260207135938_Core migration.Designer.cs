@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ChatLab.CoreService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260107174351_Schema migration")]
-    partial class Schemamigration
+    [Migration("20260207135938_Core migration")]
+    partial class Coremigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -109,41 +109,6 @@ namespace ChatLab.CoreService.Migrations
                     b.HasIndex("SenderId");
 
                     b.ToTable("Messages");
-                });
-
-            modelBuilder.Entity("ChatLab.CoreService.Entities.Problem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreationDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsSolved")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("RequesterId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RequesterId");
-
-                    b.ToTable("Problems");
                 });
 
             modelBuilder.Entity("ChatLab.CoreService.Entities.User", b =>
@@ -440,17 +405,6 @@ namespace ChatLab.CoreService.Migrations
                     b.Navigation("Receiver");
 
                     b.Navigation("Sender");
-                });
-
-            modelBuilder.Entity("ChatLab.CoreService.Entities.Problem", b =>
-                {
-                    b.HasOne("ChatLab.CoreService.Entities.User", "Requester")
-                        .WithMany()
-                        .HasForeignKey("RequesterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Requester");
                 });
 
             modelBuilder.Entity("ChatLab.CoreService.Entities.UserFollow", b =>

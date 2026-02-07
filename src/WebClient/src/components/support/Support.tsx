@@ -11,8 +11,7 @@ const Support = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [problemCreateDTO, setProblemCreateDTO] = useState<ProblemCreateDTO>({
         title: '',
-        description: '',
-        requesterId: ''
+        description: ''
     });
     const [isSubmitted, setIsSubmitted] = useState(false);
     const TITLE_MAX = 30;
@@ -45,7 +44,7 @@ const Support = () => {
         }
 
         try {
-            const createFormData = { ...problemCreateDTO, requesterId: userId };
+            const createFormData = { ...problemCreateDTO };
             await ProblemService.createProblem(createFormData);
             setIsSubmitted(true);
         } 

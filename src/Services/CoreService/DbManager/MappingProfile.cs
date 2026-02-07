@@ -15,8 +15,6 @@ namespace ChatLab.CoreService.DbManager
             CreateMap<User, UserDTO>().ReverseMap();
             CreateMap<User, UserUpdateDTO>().ReverseMap();
             CreateMap<User, UserResetPasswordDTO>().ReverseMap();
-            CreateMap<Problem, ProblemDTO>().ReverseMap();
-            CreateMap<Problem, ProblemCreateDTO>().ReverseMap();
             CreateMap<UserFollow, UserFollowDTO>().ReverseMap();
             CreateMap<UserFollow, UserFollowCreateDTO>().ReverseMap();
             CreateMap<Chat, ChatDTO>().ReverseMap();

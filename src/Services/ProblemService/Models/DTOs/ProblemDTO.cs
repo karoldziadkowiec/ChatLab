@@ -1,4 +1,4 @@
-namespace ChatLab.CoreService.Models.DTOs
+namespace ChatLab.ProblemService.Models.DTOs
 {
     public class ProblemDTO
     {
@@ -7,7 +7,5 @@ namespace ChatLab.CoreService.Models.DTOs
         public string Description { get; set; }
         public DateTime CreationDate { get; set; }
         public bool IsSolved { get; set; }
-        public string RequesterId { get; set; }
-        public UserDTO? Requester { get; set; }
     }
 }

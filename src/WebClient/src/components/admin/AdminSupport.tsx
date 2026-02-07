@@ -156,7 +156,6 @@ const AdminSupport = () => {
                                 <tr>
                                     <th>Received Date</th>
                                     <th>Status</th>
-                                    <th>Requester</th>
                                     <th>Title</th>
                                     <th></th>
                                 </tr>
@@ -175,7 +174,6 @@ const AdminSupport = () => {
                                                 )}
                                                 {getStatusName(problem.isSolved)}
                                             </td>
-                                            <td>{problem.requester.firstName} {problem.requester.lastName}</td>
                                             <td>{problem.title}</td>
                                             <td>
                                                 <Button variant="dark" className="button-spacing" onClick={() => handleShowProblemDetails(problem)}>
@@ -185,14 +183,6 @@ const AdminSupport = () => {
                                                     <>
                                                         <Button variant="success" className="button-spacing" onClick={() => handleShowCheckProblemSolvedModal(problem)}>
                                                             <i className="bi bi-check-lg"></i> Solved
-                                                        </Button>
-                                                    </>
-                                                )}
-                                                {problem.requesterId !== userId && (
-                                                    <>
-                                                        <span className="button-spacing">|</span>
-                                                        <Button variant="info" onClick={() => handleOpenChat(problem.requesterId)}>
-                                                            <i className="bi bi-chat-fill"></i>
                                                         </Button>
                                                     </>
                                                 )}
@@ -219,7 +209,6 @@ const AdminSupport = () => {
                                 <tr>
                                     <th>Received Date</th>
                                     <th>Status</th>
-                                    <th>Requester</th>
                                     <th>Title</th>
                                     <th></th>
                                 </tr>
@@ -238,20 +227,11 @@ const AdminSupport = () => {
                                                 )}
                                                 {getStatusName(problem.isSolved)}
                                             </td>
-                                            <td>{problem.requester.firstName} {problem.requester.lastName}</td>
                                             <td>{problem.title}</td>
                                             <td>
                                                 <Button variant="dark" className="button-spacing" onClick={() => handleShowProblemDetails(problem)}>
                                                     <i className="bi bi-info-square"></i> Info
                                                 </Button>
-                                                {problem.requesterId !== userId && (
-                                                    <>
-                                                        <span className="button-spacing">|</span>
-                                                        <Button variant="info" onClick={() => handleOpenChat(problem.requesterId)}>
-                                                            <i className="bi bi-chat-fill"></i>
-                                                        </Button>
-                                                    </>
-                                                )}
                                             </td>
                                         </tr>
                                     ))
@@ -274,7 +254,6 @@ const AdminSupport = () => {
                 <Modal.Body>
                     {selectedProblem && (
                         <div className="modal-content-centered">
-                            <p><Form.Label className="problem-name-label">{(selectedProblem.requester.firstName).toUpperCase()} {(selectedProblem.requester.lastName).toUpperCase()}</Form.Label></p>
                             <p><Form.Label className="problem-title-label">{selectedProblem.title}</Form.Label></p>
                             <Form.Label className="problem-section">PROBLEM INFO</Form.Label>
                             <p><strong>Received Date</strong> {TimeService.formatDateToEURWithHour(selectedProblem.creationDate)}</p>
@@ -291,10 +270,6 @@ const AdminSupport = () => {
                             <Form.Label className="problem-section">DETAILS</Form.Label>
                             <p><strong>Title:</strong> {selectedProblem.title}</p>
                             <p><strong>Description:</strong> {selectedProblem.description}</p>
-                            <Form.Label className="problem-section">REQUESTED FROM</Form.Label>
-                            <p><strong>Name:</strong> {selectedProblem.requester.firstName} {selectedProblem.requester.lastName}</p>
-                            <p><strong>E-mail:</strong> {selectedProblem.requester.email}</p>
-                            <p><strong>Phone number:</strong> {selectedProblem.requester.phoneNumber}</p>
                         </div>
                     )}
                 </Modal.Body>

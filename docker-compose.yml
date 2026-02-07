@@ -1,0 +1,114 @@
+version: "3.9"
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Your_password123
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    networks:
+      - chatlab_net
+
+  migrate-core:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    working_dir: /src
+    volumes:
+      - ./src/Services/CoreService:/src
+    environment:
+      - ConnectionStrings__MSSQLConnectionString=Server=sqlserver;Database=ChatLab;User Id=sa;Password=Your_password123;TrustServerCertificate=True;MultipleActiveResultSets=true
+    command: /bin/bash -c "sleep 20; dotnet restore; dotnet tool install -g dotnet-ef; export PATH=\"$PATH:/root/.dotnet/tools\"; dotnet ef database update --project ChatLab.CoreService.csproj --startup-project ChatLab.CoreService.csproj"
+    depends_on:
+      - sqlserver
+    networks:
+      - chatlab_net
+
+  coreservice:
+    build:
+      context: ./src/Services/CoreService
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8001
+      - ConnectionStrings__MSSQLConnectionString=Server=sqlserver;Database=ChatLab;User Id=sa;Password=Your_password123;TrustServerCertificate=True;MultipleActiveResultSets=true
+      - JWT__ValidAudience=http://localhost:3000
+      - JWT__ValidIssuer=http://localhost:8001
+    ports:
+      - "8001:8001"
+    depends_on:
+      - sqlserver
+      - migrate-core
+    networks:
+      - chatlab_net
+  migrate-problem:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    working_dir: /src
+    volumes:
+      - ./src/Services/ProblemService:/src
+    environment:
+      - ConnectionStrings__MSSQLConnectionString=Server=sqlserver;Database=ChatLab_Problem;User Id=sa;Password=Your_password123;TrustServerCertificate=True;MultipleActiveResultSets=true
+    command: /bin/bash -c "sleep 20; dotnet restore; dotnet tool install -g dotnet-ef; export PATH=\"$PATH:/root/.dotnet/tools\"; dotnet ef database update --project ChatLab.ProblemService.csproj --startup-project ChatLab.ProblemService.csproj"
+    depends_on:
+      - sqlserver
+    networks:
+      - chatlab_net
+
+  problemservice:
+    build:
+      context: ./src/Services/ProblemService
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8002
+      - ConnectionStrings__MSSQLConnectionString=Server=sqlserver;Database=ChatLab_Problem;User Id=sa;Password=Your_password123;TrustServerCertificate=True;MultipleActiveResultSets=true
+      - JWT__ValidAudience=http://localhost:3000
+      - JWT__ValidIssuer=http://localhost:8002
+    ports:
+      - "8002:8002"
+    depends_on:
+      - sqlserver
+      - migrate-problem
+    networks:
+      - chatlab_net
+
+  socketio:
+    build:
+      context: ./src/Services/SocketIoService
+    environment:
+      - SOCKETIO_PORT=8016
+      - GATEWAY_URL=http://gateway:8000
+      - WEBCLIENT_ORIGIN=http://localhost:3000
+    ports:
+      - "8016:8016"
+    networks:
+      - chatlab_net
+
+  gateway:
+    build:
+      context: ./src/Gateway
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - coreservice
+      - problemservice
+      - socketio
+    networks:
+      - chatlab_net
+
+  webclient:
+    build:
+      context: ./src/WebClient
+    environment:
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    networks:
+      - chatlab_net
+
+networks:
+  chatlab_net:
+    driver: bridge
+
+volumes:
+  mssql-data:

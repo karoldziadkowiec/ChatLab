@@ -11,22 +11,31 @@ export default class ChatHubPolling {
     private running = false;
     private timeoutId: number | null = null;
     private lastMessageId = 0;
+    private pollToken = 0; // guards against stale responses
 
     private readonly pollIntervalMs: number;
     private currentDelayMs: number;
     private readonly maxBackoffMs: number;
+    private readonly jitterMs: number;
+    private readonly timeoutMs: number;
 
-    constructor(onMessageReceived: OnMessageReceived, options?: { pollIntervalMs?: number; maxBackoffMs?: number }) {
+    constructor(
+        onMessageReceived: OnMessageReceived,
+        options?: { pollIntervalMs?: number; maxBackoffMs?: number; jitterMs?: number; timeoutMs?: number }
+    ) {
         this.onMessageReceived = onMessageReceived;
         this.pollIntervalMs = options?.pollIntervalMs ?? 1000;
         this.currentDelayMs = this.pollIntervalMs;
         this.maxBackoffMs = options?.maxBackoffMs ?? 30000;
+        this.jitterMs = options?.jitterMs ?? 300;
+        this.timeoutMs = options?.timeoutMs ?? 8000;
     }
 
     public async startConnection(chatId: number): Promise<void> {
         if (this.running) return;
         this.chatId = chatId;
         this.running = true;
+        this.pollToken++;
 
         // initial load to set lastMessageId (do not call onMessage here)
         try {
@@ -52,6 +61,7 @@ export default class ChatHubPolling {
             clearTimeout(this.timeoutId);
             this.timeoutId = null;
         }
+        this.pollToken++;
     }
 
     public setLastMessageId(id: number) {
@@ -89,26 +99,31 @@ export default class ChatHubPolling {
     private scheduleNext(delayMs: number) {
         if (!this.running) return;
         if (this.timeoutId !== null) clearTimeout(this.timeoutId);
-        this.timeoutId = window.setTimeout(() => this.pollLoop(), delayMs);
+        const jitter = Math.floor(Math.random() * this.jitterMs);
+        this.timeoutId = window.setTimeout(() => this.pollLoop(), Math.max(0, delayMs + jitter));
     }
 
     private async pollLoop(): Promise<void> {
         if (!this.running || !this.chatId) return;
+        const token = this.pollToken;
         try {
-            await this.pollOnce();
+            await this.pollOnce(token);
             this.currentDelayMs = this.pollIntervalMs;
             this.scheduleNext(this.currentDelayMs);
         } catch (err) {
             console.warn("ChatPollingHub poll error:", err);
-            this.currentDelayMs = Math.min(this.currentDelayMs * 2 || this.pollIntervalMs, this.maxBackoffMs);
+            this.currentDelayMs = Math.min((this.currentDelayMs || this.pollIntervalMs) * 2, this.maxBackoffMs);
             this.scheduleNext(this.currentDelayMs);
         }
     }
 
     // pobiera nowe wiadomości i wywołuje callback tylko dla tych z id > lastMessageId
-    private async pollOnce(): Promise<void> {
+    private async pollOnce(token: number): Promise<void> {
         if (!this.chatId) return;
+        // Note: MessageService currently returns full list; filter client-side by id
         const msgs: Message[] = await MessageService.getMessagesForChat(this.chatId);
+        // Ignore stale responses if a new poll started
+        if (token !== this.pollToken) return;
         if (!Array.isArray(msgs) || msgs.length === 0) return;
 
         msgs.sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
@@ -121,5 +136,13 @@ export default class ChatHubPolling {
             const maxId = Math.max(...newMsgs.map(m => m.id ?? 0));
             this.lastMessageId = Math.max(this.lastMessageId, maxId);
         }
+    }
+
+    public isRunning(): boolean {
+        return this.running;
+    }
+
+    public destroy(): Promise<void> {
+        return this.leaveChat();
     }
 }

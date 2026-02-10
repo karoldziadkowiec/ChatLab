@@ -25,31 +25,31 @@ public class WebSocketMiddleware
 
         var socket = await context.WebSockets.AcceptWebSocketAsync();
         var connectionId = Guid.NewGuid().ToString();
-        _logger.LogInformation("Nowe połączenie WebSocket {ConnectionId}", connectionId);
+        _logger.LogInformation("New WebSocket connection {ConnectionId}", connectionId);
 
-        // Utwórz scope, z którego rozwiążesz scoped handler i inne scoped serwisy.
+        // Create a scope to resolve scoped handler and other scoped services.
         using var scope = _serviceProvider.CreateScope();
 
-        // Rozwiąż handler z scope (handler powinien być zarejestrowany jako Scoped)
+        // Resolve handler from scope (handler should be registered as Scoped).
         var handler = scope.ServiceProvider.GetRequiredService<ChatWebSocketHandler>();
 
-        // Użyj context.RequestAborted jako tokenu anulowania
+        // Use context.RequestAborted as cancellation token.
         var cancellation = context.RequestAborted;
 
         try
         {
-            // Przekaż socket do handlera; ważne: handler używa serwisów z scope, więc scope
-            // musi żyć do momentu zakończenia HandleAsync.
+            // Pass the socket to the handler; the handler uses scoped services,
+            // so the scope must live until HandleAsync completes.
             await handler.HandleAsync(socket, connectionId, cancellation);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Błąd w WebSocket middleware dla {ConnectionId}", connectionId);
+            _logger.LogError(ex, "Error in WebSocket middleware for {ConnectionId}", connectionId);
         }
         finally
         {
-            // jeśli handler nie zamknął socket, zamknij go tutaj bez wyjątku
+            // If the handler didn't close the socket, close it here gracefully.
             try
             {
                 if (socket.State == WebSocketState.Open || socket.State == WebSocketState.CloseReceived)

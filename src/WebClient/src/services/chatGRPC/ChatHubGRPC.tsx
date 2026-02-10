@@ -14,20 +14,25 @@ class ChatHubGRPC {
 	private stream: any | null = null;
 	private chatId: number | null = null;
 	private lastMessageId: number | null = null;
+	private reconnectAttempts = 0;
+	private maxReconnectDelayMs = 10000;
+	private baseReconnectDelayMs = 500;
+	private stopRequested = false;
 
 	constructor(onMessage: (message: Message) => void, options?: Options) {
 		this.onMessageCb = onMessage;
 	}
 
-	async startConnection(chatId: number): Promise<void> {
+	async startConnection(chatId: number, userId?: string): Promise<void> {
 		this.chatId = chatId;
 		await this.leaveChat();
 		this.client = new ChatGrpcClient(CORE_GRPC_BASE, null, {});
 		const md = await buildAuthMetadata();
 		const req = new StreamRequest();
 		req.setChatid(chatId);
-		// userId is optional; set if you want server to validate membership
-		// req.setUserid(userId)
+		if (userId) {
+			req.setUserid(userId);
+		}
 		req.setSincemessageid(this.lastMessageId ?? 0);
 		this.stream = this.client.streamChat(req, md);
 		this.stream.on('data', (pb: PbMessage) => {
@@ -43,12 +48,13 @@ class ChatHubGRPC {
 			} as any;
 			this.onMessageCb(msg);
 			this.lastMessageId = msg.id;
+			this.reconnectAttempts = 0; // reset on successful data
 		});
 		this.stream.on('error', (_err: any) => {
-			// optionally implement backoff/reconnect
+			if (!this.stopRequested) this.scheduleReconnect(userId);
 		});
 		this.stream.on('end', () => {
-			// server closed stream
+			if (!this.stopRequested) this.scheduleReconnect(userId);
 		});
 	}
 
@@ -57,6 +63,7 @@ class ChatHubGRPC {
 			try { this.stream.cancel(); } catch {}
 			this.stream = null;
 		}
+		this.stopRequested = true;
 	}
 
 	async sendMessage(dto: MessageSendDTO): Promise<Message> {
@@ -93,6 +100,19 @@ class ChatHubGRPC {
 
 	setLastMessageId(id: number): void {
 		this.lastMessageId = id;
+	}
+
+	private scheduleReconnect(userId?: string): void {
+		if (this.stopRequested || !this.chatId) return;
+		this.reconnectAttempts += 1;
+		const jitter = Math.floor(Math.random() * 300);
+		const delay = Math.min(this.maxReconnectDelayMs, this.baseReconnectDelayMs * Math.pow(2, this.reconnectAttempts)) + jitter;
+		setTimeout(() => {
+			if (this.stopRequested || !this.chatId) return;
+			this.startConnection(this.chatId, userId).catch(() => {
+				// swallow; next error will schedule another reconnect
+			});
+		}, delay);
 	}
 }
 

@@ -10,19 +10,49 @@ class ChatHubSocketIO {
 	private readonly baseUrl: string;
 	private readonly path: string;
 	private authorization: string | null = null;
+	private readonly transports: string[];
+	private readonly reconnection: boolean;
+	private readonly reconnectionAttempts: number;
+	private readonly reconnectionDelay: number;
+	private readonly reconnectionDelayMax: number;
+	private readonly timeoutMs: number;
 
-	constructor(baseUrl?: string, path?: string) {
+	constructor(
+		baseUrl?: string,
+		path?: string,
+		options?: {
+			transports?: string[];
+			reconnection?: boolean;
+			reconnectionAttempts?: number;
+			reconnectionDelay?: number;
+			reconnectionDelayMax?: number;
+			timeoutMs?: number;
+		}
+	) {
 		// Default to gateway base URL and routed Socket.IO path
 		this.baseUrl = baseUrl ?? ChatHubSocketIoBaseUrl;
 		this.path = path ?? ChatHubSocketIoPath;
+
+		// Sensible defaults optimized for perf (prefer websocket)
+		this.transports = options?.transports ?? ["websocket", "polling"];
+		this.reconnection = options?.reconnection ?? true;
+		this.reconnectionAttempts = options?.reconnectionAttempts ?? 5;
+		this.reconnectionDelay = options?.reconnectionDelay ?? 500;
+		this.reconnectionDelayMax = options?.reconnectionDelayMax ?? 3000;
+		this.timeoutMs = options?.timeoutMs ?? 8000;
 	}
 
 	async connect(chatId: number, userId: string): Promise<void> {
 		return new Promise((resolve, reject) => {
 			this.socket = io(this.baseUrl, {
 				path: this.path,
-				transports: ['websocket', 'polling'],
+				transports: this.transports,
 				withCredentials: true,
+				reconnection: this.reconnection,
+				reconnectionAttempts: this.reconnectionAttempts,
+				reconnectionDelay: this.reconnectionDelay,
+				reconnectionDelayMax: this.reconnectionDelayMax,
+				timeout: this.timeoutMs,
 				auth: this.authorization ? { authorization: this.authorization } : undefined
 			});
 
@@ -83,13 +113,13 @@ class ChatHubSocketIO {
 			const timeoutId = setTimeout(() => {
 				// If we saw an ack error but no broadcast, reject with the ack error
 				done(undefined, ackError ?? new Error('Timeout waiting for server'));
-			}, 7000);
+			}, this.timeoutMs);
 
 			this.socket.emit('send_message', { dto, authorization: this.authorization }, (response: any) => {
 				if (response && response.id) {
 					done(response as Message);
 				} else if (response && response.error) {
-					// Don't immediately reject; keep waiting for broadcast
+					// Prefer failing fast on ack error to reduce waiting under load
 					ackError = new Error(response.error);
 				} else {
 					// If ack is empty, we'll resolve on broadcast or hit timeout
@@ -104,6 +134,7 @@ class ChatHubSocketIO {
 
 	disconnect(): void {
 		if (this.socket) {
+			this.socket.removeAllListeners();
 			this.socket.disconnect();
 			this.socket = null;
 		}
@@ -111,6 +142,10 @@ class ChatHubSocketIO {
 
 	setAuthorization(authHeader: string) {
 		this.authorization = authHeader;
+		if (this.socket) {
+			// Update auth for future reconnects
+			(this.socket as any).auth = this.authorization ? { authorization: this.authorization } : undefined;
+		}
 	}
 }
 

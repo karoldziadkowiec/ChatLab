@@ -3,11 +3,14 @@ using System.Net.WebSockets;
 
 public class WebSocketConnectionManager
 {
-    // Wszystkie sockety po connectionId
+    // All sockets by connectionId
     private readonly ConcurrentDictionary<string, WebSocket> _sockets = new();
 
-    // Grupy: chatId -> (connectionId -> WebSocket)
+    // Groups: chatId -> (connectionId -> WebSocket)
     private readonly ConcurrentDictionary<int, ConcurrentDictionary<string, WebSocket>> _groups = new();
+
+    // Connection metadata: connectionId -> (chatId, userId)
+    private readonly ConcurrentDictionary<string, (int chatId, string userId)> _metadata = new();
 
     public void AddSocket(string connectionId, WebSocket socket)
     {
@@ -20,6 +23,9 @@ public class WebSocketConnectionManager
         {
             try { await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closed by server", CancellationToken.None); } catch { }
         }
+
+        // Remove connection metadata
+        _metadata.TryRemove(connectionId, out _);
 
         foreach (var kv in _groups)
         {
@@ -52,5 +58,15 @@ public class WebSocketConnectionManager
             return group.Values.Where(s => s.State == WebSocketState.Open);
         }
         return Enumerable.Empty<WebSocket>();
+    }
+
+    public void SetConnectionMeta(string connectionId, int chatId, string userId)
+    {
+        _metadata[connectionId] = (chatId, userId);
+    }
+
+    public bool TryGetConnectionMeta(string connectionId, out (int chatId, string userId) meta)
+    {
+        return _metadata.TryGetValue(connectionId, out meta);
     }
 }

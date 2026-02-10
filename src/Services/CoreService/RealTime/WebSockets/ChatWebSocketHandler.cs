@@ -8,13 +8,20 @@ public class ChatWebSocketHandler
 {
     private readonly WebSocketConnectionManager _connections;
     private readonly IMessageService _messageService;
+    private readonly IChatService _chatService;
     private readonly ILogger<ChatWebSocketHandler> _logger;
-    private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
+    private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private const int MaxMessageBytes = 64 * 1024; // maximum message size
+    private const int MaxMessagesPerSecond = 10; // simple per-connection rate limit
+    private readonly Queue<DateTime> _sendTimestamps = new();
+    private int? _joinedChatId = null;
+    private string? _userId = null;
 
-    public ChatWebSocketHandler(WebSocketConnectionManager connections, IMessageService messageService, ILogger<ChatWebSocketHandler> logger)
+    public ChatWebSocketHandler(WebSocketConnectionManager connections, IMessageService messageService, IChatService chatService, ILogger<ChatWebSocketHandler> logger)
     {
         _connections = connections;
         _messageService = messageService;
+        _chatService = chatService;
         _logger = logger;
     }
 
@@ -22,23 +29,50 @@ public class ChatWebSocketHandler
     {
         _connections.AddSocket(connectionId, socket);
 
-        var buffer = new byte[4 * 1024];
+        var buffer = new byte[8 * 1024];
+        using var ms = new MemoryStream();
 
         try
         {
             while (socket.State == WebSocketState.Open && !ct.IsCancellationRequested)
             {
                 var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
-                if (result.CloseStatus.HasValue) break;
+                if (result.CloseStatus.HasValue)
+                {
+                    break;
+                }
 
-                var received = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                if (string.IsNullOrWhiteSpace(received)) continue;
+                if (result.MessageType != WebSocketMessageType.Text)
+                {
+                    continue;
+                }
+
+                ms.Write(buffer, 0, result.Count);
+
+                if (ms.Length > MaxMessageBytes)
+                {
+                    _logger.LogWarning("Message too large from {ConnectionId}. Closing connection.", connectionId);
+                    await socket.CloseAsync(WebSocketCloseStatus.MessageTooBig, "Message too big", ct);
+                    break;
+                }
+
+                if (!result.EndOfMessage)
+                {
+                    continue;
+                }
+
+                var received = Encoding.UTF8.GetString(ms.ToArray());
+                ms.SetLength(0);
+                if (string.IsNullOrWhiteSpace(received))
+                {
+                    continue;
+                }
 
                 JsonDocument doc;
                 try { doc = JsonDocument.Parse(received); }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Niepoprawny JSON od {ConnectionId}", connectionId);
+                    _logger.LogWarning(ex, "Invalid JSON from {ConnectionId}", connectionId);
                     continue;
                 }
 
@@ -48,6 +82,34 @@ public class ChatWebSocketHandler
                 if (type == "join" && doc.RootElement.TryGetProperty("chatId", out var chatIdEl))
                 {
                     var chatId = chatIdEl.GetInt32();
+                    string? userId = null;
+                    if (doc.RootElement.TryGetProperty("userId", out var userIdEl))
+                    {
+                        userId = userIdEl.GetString();
+                    }
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        _logger.LogWarning("Missing userId in JOIN message from {ConnectionId}", connectionId);
+                        await socket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "Missing userId", ct);
+                        break;
+                    }
+
+                    // Validate membership by fetching the chat and checking participants
+                    var chat = await _chatService.GetChatById(chatId);
+                    var isMember = $"{chat.User1Id}" == userId || $"{chat.User2Id}" == userId;
+                    if (!isMember)
+                    {
+                        _logger.LogWarning("User {UserId} is not a member of chat {ChatId}. Closing connection {ConnectionId}", userId, chatId, connectionId);
+                        var denyJson = JsonSerializer.Serialize(new { type = "error", code = "not_member", message = "You are not a member of this chat." });
+                        await SafeSendAsync(socket, denyJson, ct);
+                        await socket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "Not a member of chat", ct);
+                        break;
+                    }
+
+                    _joinedChatId = chatId;
+                    _userId = userId;
+                    _connections.SetConnectionMeta(connectionId, chatId, userId);
                     _connections.AddToGroup(chatId, connectionId, socket);
                     // opcjonalnie powiadomienie: użytkownik dołączył
                     continue;
@@ -65,7 +127,7 @@ public class ChatWebSocketHandler
                 {
                     var chatId = chatIdEl.GetInt32();
 
-                    // Deserializuj payload do MessageSendDTO (dopasuj do swojej klasy)
+                    // Deserialize payload to MessageSendDTO
                     MessageSendDTO messageSendDto;
                     try
                     {
@@ -73,14 +135,36 @@ public class ChatWebSocketHandler
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogWarning(ex, "Błąd deserializacji payload od {ConnectionId}", connectionId);
+                        _logger.LogWarning(ex, "Failed to deserialize payload from {ConnectionId}", connectionId);
                         continue;
                     }
 
-                    // Zapisz wiadomość przez serwis i odbierz gotowy DTO wiadomości
+                    // Validate membership and data consistency
+                    if (_joinedChatId is null || _userId is null || _joinedChatId != chatId || !string.Equals(messageSendDto.SenderId, _userId, StringComparison.Ordinal))
+                    {
+                        _logger.LogWarning("Invalid send attempt: connectionId={ConnectionId}, chatId={ChatId}, senderId={SenderId}", connectionId, chatId, messageSendDto.SenderId);
+                        var errJson = JsonSerializer.Serialize(new { type = "error", code = "invalid_sender", message = "Invalid sender or chat context." });
+                        await SafeSendAsync(socket, errJson, ct);
+                        continue;
+                    }
+
+                    // Per-connection rate limiting (count in the last second)
+                    var now = DateTime.UtcNow;
+                    while (_sendTimestamps.Count > 0 && (now - _sendTimestamps.Peek()).TotalSeconds > 1.0)
+                    {
+                        _sendTimestamps.Dequeue();
+                    }
+                    if (_sendTimestamps.Count >= MaxMessagesPerSecond)
+                    {
+                        _logger.LogWarning("Rate limit exceeded for {ConnectionId}", connectionId);
+                        var rlJson = JsonSerializer.Serialize(new { type = "error", code = "rate_limited", message = "Too many messages. Slow down." });
+                        await SafeSendAsync(socket, rlJson, ct);
+                        continue;
+                    }
+                    _sendTimestamps.Enqueue(now);
+
                     var message = await _messageService.SendMessage(messageSendDto);
 
-                    // Serializuj wiadomość i rozgłoś do grupy
                     var messageJson = JsonSerializer.Serialize(new
                     {
                         type = "receive",
@@ -91,12 +175,19 @@ public class ChatWebSocketHandler
                     await BroadcastToGroupAsync(chatId, messageJson, ct);
                     continue;
                 }
+
+                if (type == "ping")
+                {
+                    var pongJson = JsonSerializer.Serialize(new { type = "pong" });
+                    await SafeSendAsync(socket, pongJson, ct);
+                    continue;
+                }
             }
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Błąd w pętli WebSocket dla {ConnectionId}", connectionId);
+            _logger.LogError(ex, "Error in WebSocket loop for {ConnectionId}", connectionId);
         }
         finally
         {
@@ -116,9 +207,22 @@ public class ChatWebSocketHandler
             }
             catch
             {
-                // ignoruj problemy z pojedynczym socketem; czyszczenie nastąpi przy RemoveSocketAsync
+                // Ignore individual socket send errors; stale sockets are cleaned up on removal.
             }
         });
         await Task.WhenAll(tasks);
+    }
+
+    private static async Task SafeSendAsync(WebSocket socket, string messageJson, CancellationToken ct)
+    {
+        try
+        {
+            if (socket.State == WebSocketState.Open)
+            {
+                var bytes = Encoding.UTF8.GetBytes(messageJson);
+                await socket.SendAsync(new ArraySegment<byte>(bytes), WebSocketMessageType.Text, true, ct);
+            }
+        }
+        catch { }
     }
 }

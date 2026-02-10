@@ -84,8 +84,12 @@ const ChatPolling = () => {
     useEffect(() => {
         if (userId && id) {
             const hub = new ChatHubPolling((message: Message) => {
-                setMessages((prevMessages) => [...prevMessages, message]);
-            }, { pollIntervalMs: 1000 });
+                setMessages((prevMessages) => {
+                    // Avoid duplicates by id
+                    if (prevMessages.some(m => m.id === message.id)) return prevMessages;
+                    return [...prevMessages, message];
+                });
+            }, { pollIntervalMs: 1000, maxBackoffMs: 30000, jitterMs: 250, timeoutMs: 8000 });
 
             hub.startConnection(Number(id))
                 .then(() => setChatHubPolling(hub))
@@ -113,7 +117,7 @@ const ChatPolling = () => {
     };
 
     if (!chatData || !(chatData.user1Id === userId || chatData.user2Id === userId)) {
-        return <div><p><strong><h2>No chat found...</h2></strong></p></div>;
+        return <div><h2><strong>No chat found...</strong></h2></div>;
     }
 
     const handleSendMessage = async () => {
@@ -137,9 +141,11 @@ const ChatPolling = () => {
             const createdMessage = await chatHubPolling.sendMessage(messageSendDTO);
 
             if (createdMessage) {
-                setMessages(prev => [...prev, createdMessage]);
+                setMessages(prev => {
+                    if (prev.some(m => m.id === createdMessage.id)) return prev;
+                    return [...prev, createdMessage];
+                });
                 chatHubPolling.setLastMessageId(createdMessage.id);
-            } else {
             }
 
             setNewMessage('');

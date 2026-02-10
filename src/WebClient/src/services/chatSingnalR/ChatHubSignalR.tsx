@@ -1,4 +1,4 @@
-import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
+import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import ChatHubURL from '../../config/ChatHubSignalRConfig';
 import Message from '../../models/interfaces/Message';
 import MessageSendDTO from '../../models/dtos/MessageSendDTO';
@@ -7,24 +7,41 @@ class ChatHubSignalR {
     private connection: HubConnection | null = null;
     private chatId: number | null = null;
     private onMessageReceived: (message: Message) => void;
+    private readonly reconnectDelays = [0, 500, 1000, 2000, 5000, 8000];
+    private readonly serverTimeoutMs = 30000;
 
     constructor(onMessageReceived: (message: Message) => void) {
         this.onMessageReceived = onMessageReceived;
     }
 
-    public async startConnection(chatId: number): Promise<void> {
+    public async startConnection(chatId: number, userId: string): Promise<void> {
         this.chatId = chatId;
         this.connection = new HubConnectionBuilder()
             .withUrl(ChatHubURL)
-            .withAutomaticReconnect()
+            .withAutomaticReconnect(this.reconnectDelays)
+            .configureLogging(LogLevel.Information)
             .build();
+
+        this.connection.serverTimeoutInMilliseconds = this.serverTimeoutMs;
 
         try {
             await this.connection.start();
             console.log("Joined the chat.");
-            await this.connection.invoke("JoinChat", chatId);
+            await this.connection.invoke("JoinChat", chatId, userId);
             this.connection.on("ReceiveMessage", (message: Message) => {
-                this.onMessageReceived(message);
+                try { this.onMessageReceived(message); } catch (e) { console.error('ReceiveMessage handler error', e); }
+            });
+
+            this.connection.onreconnected(() => {
+                if (this.chatId != null) {
+                    this.connection?.invoke("JoinChat", this.chatId, userId).catch(e => console.error('Rejoin failed', e));
+                }
+            });
+            this.connection.onreconnecting(err => {
+                console.warn('SignalR reconnecting...', err?.message);
+            });
+            this.connection.onclose(err => {
+                if (err) console.warn('SignalR connection closed:', err);
             });
         } 
         catch (error) {
@@ -49,6 +66,7 @@ class ChatHubSignalR {
         if (this.connection && this.chatId !== null) {
             try {
                 await this.connection.invoke("LeaveChat", this.chatId);
+                this.connection.off("ReceiveMessage");
                 await this.connection.stop();
             } 
             catch (error) {

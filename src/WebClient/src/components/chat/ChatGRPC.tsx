@@ -90,7 +90,7 @@ const ChatGRPC = () => {
                 });
             }, { pollIntervalMs: 1000 });
 
-            hub.startConnection(Number(id))
+            hub.startConnection(Number(id), userId)
                 .then(() => setChatHubGRPC(hub))
                 .catch(error => {
                     console.error('Failed to start gRPC chat service:', error);

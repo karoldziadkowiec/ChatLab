@@ -11,11 +11,13 @@ namespace ChatLab.CoreService.RealTime.GRPC.Services
     public class ChatGrpcService : Proto.ChatGrpc.ChatGrpcBase
     {
         private readonly IMessageService _messageService;
+        private readonly IChatService _chatService;
         private readonly ILogger<ChatGrpcService> _logger;
 
-        public ChatGrpcService(IMessageService messageService, ILogger<ChatGrpcService> logger)
+        public ChatGrpcService(IMessageService messageService, IChatService chatService, ILogger<ChatGrpcService> logger)
         {
             _messageService = messageService;
+            _chatService = chatService;
             _logger = logger;
         }
 
@@ -29,6 +31,13 @@ namespace ChatLab.CoreService.RealTime.GRPC.Services
 
             try
             {
+                // Optional: ensure sender belongs to chat
+                var chat = await _chatService.GetChatById(request.ChatId);
+                if (chat is null || (chat.User1Id != request.SenderId && chat.User2Id != request.SenderId))
+                {
+                    throw new RpcException(new Status(StatusCode.PermissionDenied, "User is not a member of this chat."));
+                }
+
                 var dto = new MessageSendDTO
                 {
                     ChatId = request.ChatId,
@@ -71,6 +80,17 @@ namespace ChatLab.CoreService.RealTime.GRPC.Services
 
         public override async Task StreamChat(Proto.StreamRequest request, IServerStreamWriter<Proto.Message> responseStream, ServerCallContext context)
         {
+            // Validate chat membership when userId is provided
+            var reqUserId = string.IsNullOrWhiteSpace(request.UserId) ? null : request.UserId.Trim();
+            if (reqUserId != null)
+            {
+                var chat = await _chatService.GetChatById(request.ChatId);
+                if (chat is null || (chat.User1Id != reqUserId && chat.User2Id != reqUserId))
+                {
+                    throw new RpcException(new Status(StatusCode.PermissionDenied, "User is not a member of this chat."));
+                }
+            }
+
             var lastId = request.SinceMessageId > 0 ? request.SinceMessageId : 0;
             while (!context.CancellationToken.IsCancellationRequested)
             {

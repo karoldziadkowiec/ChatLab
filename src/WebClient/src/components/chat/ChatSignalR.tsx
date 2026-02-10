@@ -87,10 +87,14 @@ const ChatSignalR = () => {
     useEffect(() => {
         if (userId && id) {
             const _chatHub = new ChatHubSignalR((message) => {
-                setMessages((prevMessages) => [...prevMessages, message]);
+                setMessages((prevMessages) => {
+                    // Avoid duplicates by id
+                    if (prevMessages.some(m => m.id === message.id)) return prevMessages;
+                    return [...prevMessages, message];
+                });
             });
 
-            _chatHub.startConnection(Number(id))
+            _chatHub.startConnection(Number(id), userId)
                 .then(() => setChatHubSignalR(_chatHub))
                 .catch(error => {
                     console.error('Failed to start chat service:', error);
@@ -116,7 +120,7 @@ const ChatSignalR = () => {
     };
 
     if (!chatData || !(chatData.user1Id === userId || chatData.user2Id === userId)) {
-        return <div><p><strong><h2>No chat found...</h2></strong></p></div>;
+        return <div><h2><strong>No chat found...</strong></h2></div>;
     }
 
     const handleSendMessage = async () => {
@@ -135,10 +139,8 @@ const ChatSignalR = () => {
 
                     await chatHubSignalR.sendMessage(messageSendDTO);
                     setNewMessage('');
+                    // Rely on ReceiveMessage push from hub; no extra fetch
                     scrollToBottom();
-
-                    const _messages = await MessageService.getMessagesForChat(chatData.id);
-                    setMessages(_messages);
 
                     const endTime = performance.now();
                     const timeTaken = endTime - startTime;

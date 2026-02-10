@@ -79,8 +79,12 @@ const ChatWebSockets = () => {
     // Open WebSocket connection
     useEffect(() => {
         if (id && userId) {
-            const client = new ChatHubWebSockets(Number(id), (msg) => {
-                setMessages(prev => [...prev, msg]);
+            const client = new ChatHubWebSockets(Number(id), userId, (msg) => {
+                setMessages(prev => {
+                    // Deduplicate by message id
+                    if (prev.some(m => m.id === msg.id)) return prev;
+                    return [...prev, msg];
+                });
             });
 
             client.connect()
@@ -118,9 +122,7 @@ const ChatWebSockets = () => {
 
                 wsClient.send(messageSendDTO);
                 setNewMessage("");
-
-                const updated = await MessageService.getMessagesForChat(chatData.id);
-                setMessages(updated);
+                // Do not refresh via REST — the message will arrive via WS
 
                 const endTime = performance.now();
                 const timeTaken = endTime - startTime;

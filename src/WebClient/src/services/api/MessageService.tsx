@@ -89,6 +89,27 @@ const MessageService = {
         }
     },
 
+    async getMessagesForChatAfterId(chatId: number, afterMessageId: number): Promise<Message[]> {
+        try {
+            const authorizationHeader = await AccountService.getAuthorizationHeader();
+            const response = await axios.get<Message[]>(`${ApiCoreURL}/messages/chat/${chatId}/after/${afterMessageId}`, {
+                headers: {
+                    'Authorization': authorizationHeader
+                }
+            });
+            return response.data;
+        }
+        catch (error) {
+            if (axios.isAxiosError(error)) {
+                console.error('Error fetching messages for chat after id, details:', error.response?.data || error.message);
+            }
+            else {
+                console.error('Unexpected error:', error);
+            }
+            throw error;
+        }
+    },
+
     async getMessagesForChatCount(chatId: number): Promise<number> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
@@ -131,14 +152,15 @@ const MessageService = {
         }
     },
 
-    async sendMessage(dto: MessageSendDTO): Promise<void> {
+    async sendMessage(dto: MessageSendDTO): Promise<Message> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            await axios.post(`${ApiCoreURL}/messages`, dto, {
+            const response = await axios.post<Message>(`${ApiCoreURL}/messages`, dto, {
                 headers: {
                     'Authorization': authorizationHeader
                 }
             });
+            return response.data;
         }
         catch (error) {
             if (axios.isAxiosError(error)) {

@@ -57,8 +57,19 @@ class ChatHubSocketIO {
 			});
 
 			this.socket.on('connect', () => {
-				this.socket?.emit('join', { chatId, userId });
-				resolve();
+				// Require server-side join ack so we're not "connected but not in room".
+				this.socket?.emit('join', { chatId, userId }, (resp: any) => {
+					if (resp && resp.ok === true) {
+						resolve();
+						return;
+					}
+					const message = resp?.error ? String(resp.error) : 'Join failed';
+					try {
+						this.socket?.disconnect();
+					} finally {
+						reject(new Error(message));
+					}
+				});
 			});
 
 			this.socket.on('connect_error', (err) => reject(err));
@@ -82,47 +93,26 @@ class ChatHubSocketIO {
 				return;
 			}
 			let settled = false;
-			let ackError: Error | null = null;
 			const done = (msg?: Message, err?: Error) => {
 				if (settled) return;
 				settled = true;
-				this.socket?.off('message', onMessageMatch);
 				clearTimeout(timeoutId);
 				if (err) reject(err);
 				else if (msg) resolve(msg);
 				else reject(new Error('No response from server'));
 			};
 
-			const onMessageMatch = (payload: Message) => {
-				// Resolve when broadcasted message for this dto arrives
-				try {
-					if (
-						payload &&
-						`${payload.chatId}` === `${dto.chatId}` &&
-						`${payload.senderId}` === `${dto.senderId}` &&
-						payload.content === dto.content
-					) {
-						done(payload);
-					}
-				} catch (_) {
-					// ignore
-				}
-			};
-			this.socket.on('message', onMessageMatch);
-
 			const timeoutId = setTimeout(() => {
-				// If we saw an ack error but no broadcast, reject with the ack error
-				done(undefined, ackError ?? new Error('Timeout waiting for server'));
+				done(undefined, new Error('Timeout waiting for server ack'));
 			}, this.timeoutMs);
 
 			this.socket.emit('send_message', { dto, authorization: this.authorization }, (response: any) => {
 				if (response && response.id) {
 					done(response as Message);
 				} else if (response && response.error) {
-					// Prefer failing fast on ack error to reduce waiting under load
-					ackError = new Error(response.error);
+					done(undefined, new Error(response.error));
 				} else {
-					// If ack is empty, we'll resolve on broadcast or hit timeout
+					done(undefined, new Error('Invalid ack from server'));
 				}
 			});
 		});

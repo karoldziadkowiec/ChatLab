@@ -65,6 +65,52 @@ namespace ChatLab.CoreService
                 // Log auth failures in development to diagnose 401
                 options.Events = new JwtBearerEvents
                 {
+                    OnMessageReceived = ctx =>
+                    {
+                        // Default behavior already reads the standard Authorization: Bearer <token> header.
+                        // grpc-web (and some proxies) can drop/rename it; support a fallback header.
+                        // Accept either a raw token or "Bearer <token>".
+                        static string? ExtractToken(string? value)
+                        {
+                            if (string.IsNullOrWhiteSpace(value)) return null;
+                            // Some clients/proxies merge duplicate header keys into a single comma-separated value.
+                            // Example: "Bearer a.b.c, Bearer a.b.c". Always take the first segment.
+                            var firstSegment = value.Split(',', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                                .FirstOrDefault();
+                            if (string.IsNullOrWhiteSpace(firstSegment)) return null;
+
+                            const string bearerPrefix = "Bearer ";
+                            var trimmed = firstSegment.Trim();
+                            return trimmed.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase)
+                                ? trimmed.Substring(bearerPrefix.Length).Trim()
+                                : trimmed;
+                        }
+
+                        // If the handler didn't already find a token, look for fallbacks.
+                        if (string.IsNullOrWhiteSpace(ctx.Token))
+                        {
+                            var headers = ctx.Request.Headers;
+                            var candidate =
+                                ExtractToken(headers["x-authorization"].FirstOrDefault()) ??
+                                ExtractToken(headers["X-Authorization"].FirstOrDefault()) ??
+                                ExtractToken(headers["x-grpc-authorization"].FirstOrDefault()) ??
+                                ExtractToken(headers["X-Grpc-Authorization"].FirstOrDefault());
+                            if (!string.IsNullOrWhiteSpace(candidate))
+                            {
+                                ctx.Token = candidate;
+
+                                // Dev-only diagnostics (do not log the token itself).
+                                var env = ctx.HttpContext.RequestServices.GetRequiredService<IHostEnvironment>();
+                                if (env.IsDevelopment())
+                                {
+                                    var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                                    logger.LogInformation("JWT token read from fallback header (len {Len})", candidate.Length);
+                                }
+                            }
+                        }
+
+                        return Task.CompletedTask;
+                    },
                     OnAuthenticationFailed = ctx =>
                     {
                         var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
@@ -187,7 +233,13 @@ namespace ChatLab.CoreService
 
             // Using CORS policy
             app.UseCors("AllowClient");
-            app.UseHttpsRedirection();
+            // IMPORTANT: In Development we allow plain HTTP because the gateway (Ocelot) and gRPC-web
+            // streaming can break or silently degrade when HTTP requests get redirected to HTTPS.
+            // Keep redirection enabled for non-Development environments.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
 
             // Auth middleware
             app.UseAuthentication();

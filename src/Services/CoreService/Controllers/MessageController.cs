@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ChatLab.CoreService.Entities;
 using ChatLab.CoreService.Models.DTOs;
+using ChatLab.CoreService.RealTime.SSE.Interfaces;
 using ChatLab.CoreService.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,11 +14,13 @@ namespace ChatLab.CoreService.Controllers
     {
         private readonly IMessageService _messageService;
         private readonly IMapper _mapper;
+        private readonly IChatSseService _chatSseService;
 
-        public MessageController(IMessageService messageService, IMapper mapper)
+        public MessageController(IMessageService messageService, IMapper mapper, IChatSseService chatSseService)
         {
             _messageService = messageService;
             _mapper = mapper;
+            _chatSseService = chatSseService;
         }
 
         // GET: api/core/messages/:messageId
@@ -62,6 +65,17 @@ namespace ChatLab.CoreService.Controllers
             return Ok(messageDtos);
         }
 
+        // GET: api/core/messages/chat/:chatId/after/:afterMessageId
+        // Optimized for polling: returns only messages with Id > afterMessageId.
+        [Authorize(Policy = "AdminOrUserRights")]
+        [HttpGet("chat/{chatId}/after/{afterMessageId}")]
+        public async Task<IActionResult> GetMessagesForChatAfterId(int chatId, int afterMessageId)
+        {
+            var messages = await _messageService.GetMessagesForChatAfterId(chatId, afterMessageId);
+            var messageDtos = _mapper.Map<IEnumerable<MessageDTO>>(messages);
+            return Ok(messageDtos);
+        }
+
         // GET: api/core/messages/chat/:chatId/count
         [Authorize(Policy = "AdminRights")]
         [HttpGet("chat/{chatId}/count")]
@@ -85,8 +99,14 @@ namespace ChatLab.CoreService.Controllers
         [HttpPost]
         public async Task<IActionResult> SendMessage([FromBody] MessageSendDTO messageDto)
         {
-            await _messageService.SendMessage(messageDto);
-            return Ok(messageDto);
+            var created = await _messageService.SendMessage(messageDto);
+            var createdDto = _mapper.Map<MessageDTO>(created);
+
+            // SSE: push the created message to connected stream clients.
+            // (Clients correlate by id for latency/throughput metrics.)
+            await _chatSseService.SendMessageAsync(created.ChatId.ToString(), createdDto);
+
+            return Ok(createdDto);
         }
 
         // DELETE: api/core/messages/:messageId

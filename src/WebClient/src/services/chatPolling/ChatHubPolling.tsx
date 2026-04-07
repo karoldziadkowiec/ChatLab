@@ -72,28 +72,14 @@ export default class ChatHubPolling {
 
     // sendMessage zwraca utworzoną wiadomość (o ile API ją zwraca)
     public async sendMessage(dto: MessageSendDTO): Promise<Message | null> {
-        const svc: any = MessageService as any;
-        if (typeof svc.sendMessage === "function") {
-            const created = await svc.sendMessage(dto);
-            // natychmiast zaktualizuj lastMessageId (jeśli mamy id)
-            if (created && typeof created.id === "number") {
-                this.setLastMessageId(created.id);
-            }
-            // krótkie pollOnce po wysłaniu nie jest konieczne jeśli setLastMessageId zabezpiecza duplikat; opcjonalnie można pollOnce()
-            return created as Message;
+        // NOTE: we intentionally do NOT advance lastMessageId here.
+        // For performance/load testing we want to observe the message again via polling to measure send -> receive latency.
+        try {
+            const created = await MessageService.sendMessage(dto);
+            return created ?? null;
+        } catch {
+            return null;
         }
-
-        // fallback: jeśli nie ma sendMessage, spróbuj createMessage
-        if (typeof svc.createMessage === "function") {
-            const created = await svc.createMessage(dto);
-            if (created && typeof created.id === "number") {
-                this.setLastMessageId(created.id);
-            }
-            return created as Message;
-        }
-
-        // nic nie zrobiono
-        return null;
     }
 
     private scheduleNext(delayMs: number) {
@@ -120,8 +106,13 @@ export default class ChatHubPolling {
     // pobiera nowe wiadomości i wywołuje callback tylko dla tych z id > lastMessageId
     private async pollOnce(token: number): Promise<void> {
         if (!this.chatId) return;
-        // Note: MessageService currently returns full list; filter client-side by id
-        const msgs: Message[] = await MessageService.getMessagesForChat(this.chatId);
+		let msgs: Message[] = [];
+		try {
+			msgs = await MessageService.getMessagesForChatAfterId(this.chatId, this.lastMessageId);
+		} catch (e) {
+			// Fallback for older backends
+			msgs = await MessageService.getMessagesForChat(this.chatId);
+		}
         // Ignore stale responses if a new poll started
         if (token !== this.pollToken) return;
         if (!Array.isArray(msgs) || msgs.length === 0) return;

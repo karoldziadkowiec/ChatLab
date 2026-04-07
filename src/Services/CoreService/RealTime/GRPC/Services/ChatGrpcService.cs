@@ -13,12 +13,16 @@ namespace ChatLab.CoreService.RealTime.GRPC.Services
         private readonly IMessageService _messageService;
         private readonly IChatService _chatService;
         private readonly ILogger<ChatGrpcService> _logger;
+		private readonly int _streamPollIntervalMs;
 
-        public ChatGrpcService(IMessageService messageService, IChatService chatService, ILogger<ChatGrpcService> logger)
+        public ChatGrpcService(IMessageService messageService, IChatService chatService, ILogger<ChatGrpcService> logger, IConfiguration configuration)
         {
             _messageService = messageService;
             _chatService = chatService;
             _logger = logger;
+
+			var configured = configuration.GetValue<int?>("Grpc:StreamPollIntervalMs");
+			_streamPollIntervalMs = Math.Clamp(configured ?? 200, 20, 5000);
         }
 
         public override async Task<Proto.Message> SendMessage(Proto.MessageSend request, ServerCallContext context)
@@ -96,10 +100,9 @@ namespace ChatLab.CoreService.RealTime.GRPC.Services
             {
                 try
                 {
-                    var msgs = await _messageService.GetMessagesForChat(request.ChatId);
+                    var msgs = await _messageService.GetMessagesForChatAfterId(request.ChatId, lastId);
                     foreach (var m in msgs)
                     {
-                        if (m.Id <= lastId) continue;
                         var outMsg = new Proto.Message
                         {
                             Id = m.Id,
@@ -118,7 +121,7 @@ namespace ChatLab.CoreService.RealTime.GRPC.Services
                 {
                     _logger.LogError(ex, "Error streaming chat {ChatId}", request.ChatId);
                 }
-                await Task.Delay(1000, context.CancellationToken);
+				await Task.Delay(_streamPollIntervalMs, context.CancellationToken);
             }
         }
     }

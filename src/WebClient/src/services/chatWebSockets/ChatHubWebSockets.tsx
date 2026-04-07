@@ -3,19 +3,35 @@ import Message from "../../models/interfaces/Message";
 import ChatHubURL from '../../config/ChatHubWebSocketsConfig';
 import AccountService from "../api/AccountService"; // use if you have getToken method
 
+export type ChatWebSocketEnvelope = {
+    type: string;
+    chatId?: number;
+    clientMessageId?: string | null;
+    code?: string;
+    message?: string;
+    payload?: unknown;
+};
+
 export default class ChatHubWebSockets {
     private socket: WebSocket | null = null;
     private readonly chatId: number;
     private readonly userId: string;
-    private readonly onMessageReceived: (msg: Message) => void;
+    private readonly onMessageReceived: (msg: Message, envelope?: ChatWebSocketEnvelope) => void;
+    private readonly onServerError?: (envelope: ChatWebSocketEnvelope) => void;
     private reconnectAttempts = 0;
     private heartbeatTimer: number | null = null;
     private closedExplicitly = false;
 
-    constructor(chatId: number, userId: string, onMessageReceived: (msg: Message) => void) {
+    constructor(
+        chatId: number,
+        userId: string,
+        onMessageReceived: (msg: Message, envelope?: ChatWebSocketEnvelope) => void,
+        onServerError?: (envelope: ChatWebSocketEnvelope) => void
+    ) {
         this.chatId = chatId;
         this.userId = userId;
         this.onMessageReceived = onMessageReceived;
+        this.onServerError = onServerError;
     }
 
     async connect(): Promise<void> {
@@ -44,13 +60,14 @@ export default class ChatHubWebSockets {
 
                 this.socket.onmessage = (ev: MessageEvent) => {
                     try {
-                        const data = JSON.parse(ev.data);
+                        const data = JSON.parse(ev.data) as ChatWebSocketEnvelope;
                         if (data?.type === 'receive' || data?.type === 'message') {
-                            this.onMessageReceived(data.payload as Message);
+                            this.onMessageReceived(data.payload as Message, data);
                         } else if (data?.type === 'pong') {
                             // heartbeat OK
                         } else if (data?.type === 'error') {
                             console.warn('WS server error:', data);
+                            this.onServerError?.(data);
                         } else {
                             console.debug('WS message (unknown type):', data);
                         }
@@ -103,23 +120,35 @@ export default class ChatHubWebSockets {
         }, delay);
     }
 
-    private sendRaw(obj: any): void {
+    private sendRaw(obj: any): boolean {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             this.socket.send(JSON.stringify(obj));
+            return true;
         } else {
             // Optionally buffer or drop
             console.warn('Attempt to send on closed socket', obj);
+            return false;
         }
     }
 
     // Send message in envelope, as expected by the server
-    send(messageDto: MessageSendDTO): void {
+    send(messageDto: MessageSendDTO, clientMessageId?: string | null): boolean {
         const envelope = {
             type: 'message',
             chatId: this.chatId,
+            clientMessageId: clientMessageId ?? null,
             payload: messageDto
         };
-        this.sendRaw(envelope);
+        return this.sendRaw(envelope);
+    }
+
+    createClientMessageId(): string {
+        // Modern browsers support crypto.randomUUID(). Keep a fallback for older ones.
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return crypto.randomUUID();
+        }
+        return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     }
 
     disconnect(): void {

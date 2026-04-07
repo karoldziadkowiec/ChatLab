@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Modal } from 'react-bootstrap';
 import { toast } from 'react-toastify';
@@ -10,6 +10,7 @@ import MessageService from '../../services/api/MessageService';
 import CommunicationTechnologyService from '../../services/api/CommunicationTechnologyService';
 import CommunicationTechnologyConst from "../../models/enums/CommunicationTechnologyConst";
 import ChatHubGRPC from '../../services/chatGRPC/ChatHubGRPC'
+import { MessageContentConfig, MessageIntervalConfigInMs, SimulationTimeConfigInMs } from '../../config/SimulationConfig';
 import ChatModel from '../../models/interfaces/Chat';
 import Message from '../../models/interfaces/Message';
 import UserDTO from '../../models/dtos/UserDTO';
@@ -18,6 +19,8 @@ import '../../App.css';
 import '../../styles/chat/Chat.css';
 
 const ChatGRPC = () => {
+    const METRICS_TOAST_ID = 'grpc-send-metrics';
+    const THROUGHPUT_WINDOW_MS = 10_000;
     const [technologyName, setTechnologyName] = useState<string | null>(null);
     const [technologyId, setTechnologyId] = useState<number | null>(null);
     const { id } = useParams();
@@ -34,6 +37,52 @@ const ChatGRPC = () => {
     const [showDeleteMessageModal, setShowDeleteMessageModal] = useState<boolean>(false);
     const [deleteMessageId, setDeleteMessageId] = useState<number | null>(null);
 
+    // Continuous traffic simulation (single client): sends messages at a configured interval.
+    const [isAutoSending, setIsAutoSending] = useState<boolean>(false);
+    const autoSendRunIdRef = useRef<number>(0);
+
+    // Aggregates for the whole simulation run (reset on Start).
+    const runStartPerfMsRef = useRef<number | null>(null);
+    const runSentOkCountRef = useRef<number>(0);
+    const runSendAttemptCountRef = useRef<number>(0);
+    const runSendFailCountRef = useRef<number>(0);
+    const runEchoTotalMsRef = useRef<number>(0);
+    const runEchoCountRef = useRef<number>(0);
+    const runEchoMinMsRef = useRef<number | null>(null);
+    const runEchoMaxMsRef = useRef<number | null>(null);
+    const [runAvgEchoMs, setRunAvgEchoMs] = useState<number | null>(null);
+    const [runMinEchoMs, setRunMinEchoMs] = useState<number | null>(null);
+    const [runMaxEchoMs, setRunMaxEchoMs] = useState<number | null>(null);
+    const [runAvgThroughputMsgPerSec, setRunAvgThroughputMsgPerSec] = useState<number | null>(null);
+    const [runFailPercent, setRunFailPercent] = useState<number | null>(null);
+
+    // Throughput (msg/s): keep timestamps of successful echos in a sliding window.
+    const echoedOkTimestampsRef = useRef<number[]>([]);
+
+    // Helps gRPC stream start from the newest already-loaded message.
+    const lastLoadedMessageIdRef = useRef<number>(0);
+
+    // Used for accurate latency measurement: correlate created message id with gRPC stream receive.
+    const receivedMessageIdsRef = useRef<Set<number>>(new Set());
+    const receiveWaitersRef = useRef<Map<number, () => void>>(new Map());
+
+    const waitForReceive = useCallback((messageId: number, timeoutMs: number): Promise<void> => {
+        if (receivedMessageIdsRef.current.has(messageId)) return Promise.resolve();
+
+        return new Promise<void>((resolve, reject) => {
+            const timeout = window.setTimeout(() => {
+                receiveWaitersRef.current.delete(messageId);
+                reject(new Error('Timed out waiting for gRPC stream receive.'));
+            }, timeoutMs);
+
+            receiveWaitersRef.current.set(messageId, () => {
+                window.clearTimeout(timeout);
+                receiveWaitersRef.current.delete(messageId);
+                resolve();
+            });
+        });
+    }, []);
+
     useEffect(() => {
         const fetchUserData = async () => {
             try {
@@ -45,21 +94,32 @@ const ChatGRPC = () => {
             }
         };
 
-        const fetchChatData = async (chatId: number) => {
+        const fetchChatData = async (chatId: number, currentUserId: string | null) => {
             try {
                 const _chatData = await ChatService.getChatById(chatId);
                 setChatData(_chatData);
 
-                if (_chatData.user1Id === userId) {
+                // When current user is not a participant, still allow entering the room (load-testing mode).
+                // We keep the header stable by showing one of the chat participants as the "receiver".
+                if (currentUserId && _chatData.user1Id === currentUserId) {
                     setUser(_chatData.user1);
                     setReceiver(_chatData.user2);
-                } else {
+                } else if (currentUserId && _chatData.user2Id === currentUserId) {
                     setUser(_chatData.user2);
                     setReceiver(_chatData.user1);
+                } else {
+                    setUser(null);
+                    setReceiver(_chatData.user1 ?? _chatData.user2);
                 }
 
                 const _messages = await MessageService.getMessagesForChat(chatId);
                 setMessages(_messages);
+                if (Array.isArray(_messages) && _messages.length > 0) {
+                    const maxId = Math.max(..._messages.map(m => (typeof m.id === 'number' ? m.id : 0)));
+                    lastLoadedMessageIdRef.current = Number.isFinite(maxId) ? maxId : 0;
+                } else {
+                    lastLoadedMessageIdRef.current = 0;
+                }
 
                 const techName = CommunicationTechnologyConst.GRPC;
                 setTechnologyName(techName);
@@ -77,18 +137,28 @@ const ChatGRPC = () => {
 
         if (id) {
             fetchUserData();
-            fetchChatData(Number(id));
+            fetchChatData(Number(id), userId);
         }
     }, [id, userId]);
 
     useEffect(() => {
         if (userId && id) {
             const hub = new ChatHubGRPC((message: Message) => {
+                if (typeof message.id === 'number') {
+                    receivedMessageIdsRef.current.add(message.id);
+                    const waiter = receiveWaitersRef.current.get(message.id);
+                    if (waiter) {
+                        try { waiter(); } catch { /* ignore */ }
+                    }
+                }
                 setMessages((prevMessages) => {
                     if (prevMessages.some(m => m.id === message.id)) return prevMessages;
                     return [...prevMessages, message];
                 });
             }, { pollIntervalMs: 1000 });
+
+            // Start streaming only from the newest message we already loaded via REST.
+            hub.setLastMessageId(lastLoadedMessageIdRef.current);
 
             hub.startConnection(Number(id), userId)
                 .then(() => setChatHubGRPC(hub))
@@ -98,6 +168,9 @@ const ChatGRPC = () => {
                 });
 
             return () => {
+                // Stop background traffic loop on unmount/leave.
+                autoSendRunIdRef.current += 1;
+                setIsAutoSending(false);
                 hub.leaveChat().catch(error => {
                     console.error('Failed to stop gRPC chat service:', error);
                 });
@@ -115,50 +188,248 @@ const ChatGRPC = () => {
         }
     };
 
-    if (!chatData || !(chatData.user1Id === userId || chatData.user2Id === userId)) {
-        return <div><p><strong><h2>No chat found...</h2></strong></p></div>;
+    const resolveReceiverIdForSend = useCallback((): string | null => {
+        if (!chatData) return null;
+        if (userId && chatData.user1Id === userId) return chatData.user2Id;
+        return chatData.user1Id;
+    }, [chatData, userId]);
+
+    const showMetricsToast = useCallback((message: string) => {
+        if (toast.isActive(METRICS_TOAST_ID)) {
+            toast.update(METRICS_TOAST_ID, {
+                render: message,
+                type: 'info',
+                autoClose: 2500,
+                closeOnClick: true,
+                pauseOnHover: true
+            });
+            return;
+        }
+
+        toast.info(message, {
+            toastId: METRICS_TOAST_ID,
+            autoClose: 2500,
+            closeOnClick: true,
+            pauseOnHover: true
+        });
+    }, []);
+
+    const getCurrentThroughputMsgPerSec = useCallback((): number => {
+        const now = performance.now();
+        const windowStart = now - THROUGHPUT_WINDOW_MS;
+        const timestamps = echoedOkTimestampsRef.current;
+
+        // Drop old entries in-place.
+        let firstValidIndex = 0;
+        while (firstValidIndex < timestamps.length && timestamps[firstValidIndex] < windowStart) {
+            firstValidIndex += 1;
+        }
+        if (firstValidIndex > 0) {
+            timestamps.splice(0, firstValidIndex);
+        }
+
+        const windowSeconds = THROUGHPUT_WINDOW_MS / 1000;
+        return timestamps.length / windowSeconds;
+    }, [THROUGHPUT_WINDOW_MS]);
+
+    const sendMessageWithMetrics = useCallback(async (content: string, mode: 'manual' | 'auto') => {
+        const isAuto = mode === 'auto' && runStartPerfMsRef.current != null;
+        if (isAuto) {
+            runSendAttemptCountRef.current += 1;
+            const attempts = runSendAttemptCountRef.current;
+            const fails = runSendFailCountRef.current;
+            setRunFailPercent(attempts > 0 ? (fails / attempts) * 100 : null);
+        }
+
+        try {
+            if (!chatHubGRPC) {
+                toast.error('Chat service not ready.');
+                throw new Error('Chat service not ready.');
+            }
+
+            const senderId = userId;
+            const receiverId = resolveReceiverIdForSend();
+            if (!chatData?.id || !senderId || !receiverId || !technologyId) {
+                toast.error('Unable to send message. Missing required data.');
+                throw new Error('Missing required data.');
+            }
+
+            const startTime = performance.now();
+            const dto: MessageSendDTO = {
+                chatId: chatData.id,
+                senderId,
+                receiverId,
+                communicationTechnologyId: technologyId,
+                content
+            };
+
+            const created = await chatHubGRPC.sendMessage(dto);
+            if (!created || typeof created.id !== 'number') {
+                throw new Error('gRPC SendMessage did not return created message with id.');
+            }
+
+            // Optimistic UI update: show the message immediately.
+            // If/when the stream echoes it back, we dedupe by id in the stream handler.
+            setMessages(prev => {
+                if (prev.some(m => m.id === created.id)) return prev;
+                return [...prev, created];
+            });
+
+            let echoMs: number | null = null;
+            try {
+                await waitForReceive(created.id, 5000);
+                echoMs = performance.now() - startTime;
+            } catch {
+                // ignore timeout
+            }
+
+            if (echoMs != null) {
+                const echoDonePerfMs = performance.now();
+                echoedOkTimestampsRef.current.push(echoDonePerfMs);
+                const throughput = getCurrentThroughputMsgPerSec();
+
+                if (isAuto) {
+                    runSentOkCountRef.current += 1;
+                    const elapsedSec = (echoDonePerfMs - runStartPerfMsRef.current!) / 1000;
+                    if (elapsedSec > 0) {
+                        setRunAvgThroughputMsgPerSec(runSentOkCountRef.current / elapsedSec);
+                    }
+
+                    runEchoTotalMsRef.current += echoMs;
+                    runEchoCountRef.current += 1;
+                    setRunAvgEchoMs(runEchoTotalMsRef.current / runEchoCountRef.current);
+
+                    const currentMin = runEchoMinMsRef.current;
+                    const currentMax = runEchoMaxMsRef.current;
+                    const nextMin = currentMin == null ? echoMs : Math.min(currentMin, echoMs);
+                    const nextMax = currentMax == null ? echoMs : Math.max(currentMax, echoMs);
+                    runEchoMinMsRef.current = nextMin;
+                    runEchoMaxMsRef.current = nextMax;
+                    setRunMinEchoMs(nextMin);
+                    setRunMaxEchoMs(nextMax);
+
+                    const attempts = runSendAttemptCountRef.current;
+                    const fails = runSendFailCountRef.current;
+                    setRunFailPercent(attempts > 0 ? (fails / attempts) * 100 : null);
+                }
+
+                const echoRounded = Math.round(echoMs);
+                const toastMessage = `gRPC (${mode}): time ${echoRounded} ms | throughput ${throughput.toFixed(2)} msg/s`;
+                showMetricsToast(toastMessage);
+                console.log(`gRPC send metrics (${mode}): time=${echoRounded}ms, throughput=${throughput.toFixed(2)} msg/s`);
+                return;
+            }
+
+            // Timeout path
+            const throughput = getCurrentThroughputMsgPerSec();
+            const toastMessage = `gRPC (${mode}): time timeout | throughput ${throughput.toFixed(2)} msg/s`;
+            showMetricsToast(toastMessage);
+        } catch (e) {
+            if (isAuto) {
+                runSendFailCountRef.current += 1;
+                const attempts = runSendAttemptCountRef.current;
+                const fails = runSendFailCountRef.current;
+                setRunFailPercent(attempts > 0 ? (fails / attempts) * 100 : null);
+            }
+            throw e;
+        }
+    }, [chatHubGRPC, chatData?.id, userId, technologyId, resolveReceiverIdForSend, waitForReceive, getCurrentThroughputMsgPerSec, showMetricsToast]);
+
+    const startAutoSend = useCallback(async () => {
+        if (isAutoSending) return;
+
+        if (!chatHubGRPC) {
+            toast.error('Chat service not ready yet.');
+            return;
+        }
+
+        if (!userId || !chatData?.id || !technologyId) {
+            toast.error('Chat is not ready yet (missing user/chat/technology).');
+            return;
+        }
+
+        if (!MessageIntervalConfigInMs || MessageIntervalConfigInMs <= 0) {
+            toast.error('Invalid message interval config.');
+            return;
+        }
+
+        const content = (MessageContentConfig ?? '').trim();
+        if (!content) {
+            toast.error('Message content config is empty.');
+            return;
+        }
+
+        setIsAutoSending(true);
+
+        // Reset run aggregates.
+        const runStartPerfMs = performance.now();
+        runStartPerfMsRef.current = runStartPerfMs;
+        runSentOkCountRef.current = 0;
+        runSendAttemptCountRef.current = 0;
+        runSendFailCountRef.current = 0;
+        runEchoTotalMsRef.current = 0;
+        runEchoCountRef.current = 0;
+        runEchoMinMsRef.current = null;
+        runEchoMaxMsRef.current = null;
+        setRunAvgEchoMs(null);
+        setRunMinEchoMs(null);
+        setRunMaxEchoMs(null);
+        setRunAvgThroughputMsgPerSec(null);
+        setRunFailPercent(null);
+
+        // Reset sliding-window throughput so it doesn't carry over between runs.
+        echoedOkTimestampsRef.current = [];
+
+        const runId = autoSendRunIdRef.current + 1;
+        autoSendRunIdRef.current = runId;
+
+        const stopAtPerfMs = SimulationTimeConfigInMs && SimulationTimeConfigInMs > 0
+            ? runStartPerfMs + SimulationTimeConfigInMs
+            : null;
+
+        // Loop: send -> wait -> repeat. (No overlapping sends)
+        while (autoSendRunIdRef.current === runId) {
+            if (stopAtPerfMs != null && performance.now() >= stopAtPerfMs) {
+                break;
+            }
+            try {
+                await sendMessageWithMetrics(content, 'auto');
+            } catch (e) {
+                console.error('Auto-send failed:', e);
+            }
+
+            await new Promise<void>(resolve => setTimeout(resolve, MessageIntervalConfigInMs));
+        }
+
+        // If we exited because time elapsed (and not because user pressed Stop), stop the run.
+        if (autoSendRunIdRef.current === runId && stopAtPerfMs != null) {
+            autoSendRunIdRef.current += 1;
+            setIsAutoSending(false);
+            toast.info('Simulation time elapsed — stopped automatically.');
+        }
+    }, [isAutoSending, chatHubGRPC, userId, chatData?.id, technologyId, sendMessageWithMetrics]);
+
+    const stopAutoSend = useCallback(() => {
+        autoSendRunIdRef.current += 1;
+        setIsAutoSending(false);
+    }, []);
+
+    if (!chatData) {
+        return <div><h2><strong>No chat found...</strong></h2></div>;
     }
 
     const handleSendMessage = async () => {
-    if (!chatHubGRPC || newMessage.trim() === '') {
-        toast.error('Message cannot be sent');
-        return;
-    }
+        if (!newMessage.trim()) return;
 
-    try {
-        if (chatData?.id && user?.id && receiver?.id && technologyId) {
-            const startTime = performance.now();
-
-            const messageSendDTO: MessageSendDTO = {
-                chatId: chatData.id,
-                senderId: user.id,
-                receiverId: receiver.id,
-                communicationTechnologyId: technologyId,
-                content: newMessage
-            };
-
-            const createdMessage = await chatHubGRPC.sendMessage(messageSendDTO);
-
-            if (createdMessage) {
-                setMessages(prev => [...prev, createdMessage]);
-                chatHubGRPC.setLastMessageId(createdMessage.id);
-            } else {
-            }
-
+        try {
+            await sendMessageWithMetrics(newMessage, 'manual');
             setNewMessage('');
             scrollToBottom();
-
-            const endTime = performance.now();
-            const timeTaken = endTime - startTime;
-            console.log(`Czas wysyłania wiadomości dla gRPC: ${Math.round(timeTaken)} ms`);
-        } else {
-            toast.error('Unable to send message. Missing required data.');
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            toast.error('Failed to send message.');
         }
-    } catch (error) {
-        console.error('Failed to send message:', error);
-        toast.error('Failed to send message.');
-    }
-};
+    };
 
     const handleDeleteChatRoom = async () => {
         if (!chatData)
@@ -214,9 +485,54 @@ const ChatGRPC = () => {
                             <div className="chat-subtitle">Chat via gRPC</div>
                         </div>
                     </div>
-                    <Button variant="danger" size='sm' onClick={() => setShowDeleteChatRoomModal(true)}>
-                        <i className="bi bi-trash"></i>
-                    </Button>
+                    <div className="chat-header__right">
+                        <Button
+                            variant={isAutoSending ? 'warning' : 'secondary'}
+                            size='sm'
+                            onClick={() => {
+                                if (isAutoSending) stopAutoSend();
+                                else startAutoSend();
+                            }}
+                            title={isAutoSending ? 'Stop continuous sending' : `Start continuous sending (${MessageIntervalConfigInMs} ms)`}
+                        >
+                            <i className={isAutoSending ? 'bi bi-stop-fill' : 'bi bi-play-fill'}></i>
+                        </Button>
+                        <div className="chat-header__metrics small">
+                            avg time:{' '}
+                            {runAvgEchoMs != null ? (
+                                <span className="text-warning">{Math.round(runAvgEchoMs)} ms</span>
+                            ) : (
+                                '-'
+                            )}{' '}
+                            | min:{' '}
+                            {runMinEchoMs != null ? (
+                                <span className="text-warning">{Math.round(runMinEchoMs)} ms</span>
+                            ) : (
+                                '-'
+                            )}{' '}
+                            | max:{' '}
+                            {runMaxEchoMs != null ? (
+                                <span className="text-warning">{Math.round(runMaxEchoMs)} ms</span>
+                            ) : (
+                                '-'
+                            )}{' '}
+                            | avg throughput:{' '}
+                            {runAvgThroughputMsgPerSec != null ? (
+                                <span className="text-warning">{runAvgThroughputMsgPerSec.toFixed(2)} msg/s</span>
+                            ) : (
+                                '-'
+                            )}{' '}
+                            | failed:{' '}
+                            {runFailPercent != null ? (
+                                <span className="text-warning">{runFailPercent.toFixed(2)}%</span>
+                            ) : (
+                                '-'
+                            )}
+                        </div>
+                        <Button variant="danger" size='sm' onClick={() => setShowDeleteChatRoomModal(true)}>
+                            <i className="bi bi-trash"></i>
+                        </Button>
+                    </div>
                 </div>
                 <div className="messages">
                     {messages.length > 0 ? (

@@ -1,10 +1,16 @@
 ﻿using ChatLab.CoreService.RealTime.SSE.Interfaces;
 using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace ChatLab.CoreService.RealTime.SSE.Classes
 {
     public class ChatSseService : IChatSseService
     {
+        private static readonly JsonSerializerOptions SseJsonOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
         private readonly ConcurrentDictionary<string, List<StreamWriter>> _clients =
             new ConcurrentDictionary<string, List<StreamWriter>>();
 
@@ -26,29 +32,36 @@ namespace ChatLab.CoreService.RealTime.SSE.Classes
         {
             if (!_clients.TryGetValue(chatId, out var list)) return;
 
-            var json = System.Text.Json.JsonSerializer.Serialize(message);
+            var json = JsonSerializer.Serialize(message, SseJsonOptions);
 
-            List<StreamWriter> failed = new();
-
+            List<StreamWriter> snapshot;
             lock (list)
             {
-                foreach (var client in list)
-                {
-                    try
-                    {
-                        client.WriteLine($"data: {json}");
-                        client.WriteLine();
-                        client.Flush();
-                    }
-                    catch
-                    {
-                        failed.Add(client);
-                    }
-                }
+                snapshot = list.ToList();
+            }
 
-                // czyść nieaktywne
-                foreach (var f in failed)
-                    list.Remove(f);
+            List<StreamWriter> failed = new();
+            foreach (var client in snapshot)
+            {
+                try
+                {
+                    await client.WriteLineAsync($"data: {json}");
+                    await client.WriteLineAsync();
+                    await client.FlushAsync();
+                }
+                catch
+                {
+                    failed.Add(client);
+                }
+            }
+
+            if (failed.Count > 0)
+            {
+                lock (list)
+                {
+                    foreach (var f in failed)
+                        list.Remove(f);
+                }
             }
         }
     }

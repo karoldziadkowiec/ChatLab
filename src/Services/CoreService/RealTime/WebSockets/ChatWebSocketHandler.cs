@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using ChatLab.CoreService.Models.DTOs;
 using ChatLab.CoreService.Services.Interfaces;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 public class ChatWebSocketHandler
 {
@@ -10,6 +12,7 @@ public class ChatWebSocketHandler
     private readonly IMessageService _messageService;
     private readonly IChatService _chatService;
     private readonly ILogger<ChatWebSocketHandler> _logger;
+    private readonly bool _allowNonParticipants;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     private const int MaxMessageBytes = 64 * 1024; // maximum message size
     private const int MaxMessagesPerSecond = 10; // simple per-connection rate limit
@@ -17,12 +20,22 @@ public class ChatWebSocketHandler
     private int? _joinedChatId = null;
     private string? _userId = null;
 
-    public ChatWebSocketHandler(WebSocketConnectionManager connections, IMessageService messageService, IChatService chatService, ILogger<ChatWebSocketHandler> logger)
+    public ChatWebSocketHandler(
+        WebSocketConnectionManager connections,
+        IMessageService messageService,
+        IChatService chatService,
+        ILogger<ChatWebSocketHandler> logger,
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         _connections = connections;
         _messageService = messageService;
         _chatService = chatService;
         _logger = logger;
+
+        // For load/performance testing in Development only: allow any authenticated user to join/send
+        // messages in a 1:1 chat without changing the data model.
+        _allowNonParticipants = environment.IsDevelopment() && configuration.GetValue<bool>("LoadTesting:AllowNonParticipantsInChats");
     }
 
     public async Task HandleAsync(WebSocket socket, string connectionId, CancellationToken ct)
@@ -95,16 +108,28 @@ public class ChatWebSocketHandler
                         break;
                     }
 
-                    // Validate membership by fetching the chat and checking participants
+                    // Validate chat exists + membership (unless load-testing override is enabled)
                     var chat = await _chatService.GetChatById(chatId);
-                    var isMember = $"{chat.User1Id}" == userId || $"{chat.User2Id}" == userId;
-                    if (!isMember)
+                    if (chat == null)
                     {
-                        _logger.LogWarning("User {UserId} is not a member of chat {ChatId}. Closing connection {ConnectionId}", userId, chatId, connectionId);
-                        var denyJson = JsonSerializer.Serialize(new { type = "error", code = "not_member", message = "You are not a member of this chat." });
+                        _logger.LogWarning("Chat {ChatId} not found. Closing connection {ConnectionId}", chatId, connectionId);
+                        var denyJson = JsonSerializer.Serialize(new { type = "error", code = "chat_not_found", message = "Chat not found." });
                         await SafeSendAsync(socket, denyJson, ct);
-                        await socket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "Not a member of chat", ct);
+                        await socket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "Chat not found", ct);
                         break;
+                    }
+
+                    if (!_allowNonParticipants)
+                    {
+                        var isMember = $"{chat.User1Id}" == userId || $"{chat.User2Id}" == userId;
+                        if (!isMember)
+                        {
+                            _logger.LogWarning("User {UserId} is not a member of chat {ChatId}. Closing connection {ConnectionId}", userId, chatId, connectionId);
+                            var denyJson = JsonSerializer.Serialize(new { type = "error", code = "not_member", message = "You are not a member of this chat." });
+                            await SafeSendAsync(socket, denyJson, ct);
+                            await socket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "Not a member of chat", ct);
+                            break;
+                        }
                     }
 
                     _joinedChatId = chatId;
@@ -126,6 +151,12 @@ public class ChatWebSocketHandler
                                   && doc.RootElement.TryGetProperty("payload", out var payloadEl))
                 {
                     var chatId = chatIdEl.GetInt32();
+
+                    string? clientMessageId = null;
+                    if (doc.RootElement.TryGetProperty("clientMessageId", out var clientMessageIdEl))
+                    {
+                        clientMessageId = clientMessageIdEl.GetString();
+                    }
 
                     // Deserialize payload to MessageSendDTO
                     MessageSendDTO messageSendDto;
@@ -169,6 +200,7 @@ public class ChatWebSocketHandler
                     {
                         type = "receive",
                         chatId,
+                        clientMessageId,
                         payload = message
                     }, _jsonOptions);
 

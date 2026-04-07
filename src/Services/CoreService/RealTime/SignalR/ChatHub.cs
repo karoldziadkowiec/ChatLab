@@ -1,6 +1,8 @@
 ﻿using ChatLab.CoreService.Models.DTOs;
 using ChatLab.CoreService.Services.Interfaces;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
 
 namespace ChatLab.CoreService.RealTime.SignalR
@@ -9,35 +11,49 @@ namespace ChatLab.CoreService.RealTime.SignalR
     {
         private readonly IChatService _chatService;
         private readonly IMessageService _messageService;
+        private readonly bool _allowNonParticipants;
 
-        public ChatHub(IChatService chatService, IMessageService messageService)
+        public ChatHub(IChatService chatService, IMessageService messageService, IConfiguration configuration, IHostEnvironment environment)
         {
             _chatService = chatService;
             _messageService = messageService;
+
+            // For load/performance testing in Development only: allow any authenticated user to join/send
+            // messages in a 1:1 chat without changing the data model.
+            _allowNonParticipants = environment.IsDevelopment() && configuration.GetValue<bool>("LoadTesting:AllowNonParticipantsInChats");
         }
 
-        public async Task SendMessage(MessageSendDTO messageSendDTO)
+        public async Task<ChatLab.CoreService.Entities.Message> SendMessage(MessageSendDTO messageSendDTO)
         {
-            // Basic validation: ensure sender belongs to the chat
             var chat = await _chatService.GetChatById(messageSendDTO.ChatId);
-            var allowed = $"{chat.User1Id}" == $"{messageSendDTO.SenderId}" || $"{chat.User2Id}" == $"{messageSendDTO.SenderId}";
-            if (!allowed)
+            if (chat == null)
+                throw new HubException("Chat not found.");
+
+            if (!_allowNonParticipants)
             {
-                throw new HubException("Sender is not a participant of this chat.");
+                // Basic validation: ensure sender belongs to the chat
+                var allowed = $"{chat.User1Id}" == $"{messageSendDTO.SenderId}" || $"{chat.User2Id}" == $"{messageSendDTO.SenderId}";
+                if (!allowed)
+                    throw new HubException("Sender is not a participant of this chat.");
             }
 
             var message = await _messageService.SendMessage(messageSendDTO);
             await Clients.Group(messageSendDTO.ChatId.ToString()).SendAsync("ReceiveMessage", message);
+            return message;
         }
 
         public async Task JoinChat(int chatId, string userId)
         {
-            // Validate that joining user belongs to the chat
             var chat = await _chatService.GetChatById(chatId);
-            var allowed = $"{chat.User1Id}" == userId || $"{chat.User2Id}" == userId;
-            if (!allowed)
+            if (chat == null)
+                throw new HubException("Chat not found.");
+
+            if (!_allowNonParticipants)
             {
-                throw new HubException("User is not a participant of this chat.");
+                // Validate that joining user belongs to the chat
+                var allowed = $"{chat.User1Id}" == userId || $"{chat.User2Id}" == userId;
+                if (!allowed)
+                    throw new HubException("User is not a participant of this chat.");
             }
 
             await Groups.AddToGroupAsync(Context.ConnectionId, chatId.ToString());

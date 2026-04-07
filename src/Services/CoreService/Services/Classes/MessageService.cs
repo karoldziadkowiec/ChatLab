@@ -53,6 +53,16 @@ namespace ChatLab.CoreService.Services.Classes
                 .ToListAsync();
         }
 
+		public async Task<IEnumerable<Message>> GetMessagesForChatAfterId(int chatId, int afterMessageId)
+		{
+			return await _dbContext.Messages
+				.AsNoTracking()
+				.Include(m => m.CommunicationTechnology)
+				.Where(m => m.ChatId == chatId && m.Id > afterMessageId)
+				.OrderBy(m => m.Id)
+				.ToListAsync();
+		}
+
         public async Task<int> GetMessagesForChatCount(int chatId)
         {
             return await _dbContext.Messages

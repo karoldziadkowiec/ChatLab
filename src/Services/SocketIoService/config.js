@@ -18,6 +18,12 @@ export const PING_INTERVAL_MS = parseInt(env('PING_INTERVAL_MS', '25000'), 10);
 export const MAX_HTTP_BUFFER_SIZE = parseInt(env('MAX_HTTP_BUFFER_SIZE', '1048576'), 10);
 export const SOCKETIO_TRANSPORTS = env('SOCKETIO_TRANSPORTS', 'websocket'); 
 
+// Load testing (Development only): allow any user to join any chat room.
+// Default: true in non-production, false in production. Can be overridden by env var.
+const isProduction = (process.env.NODE_ENV ?? '').toLowerCase() === 'production';
+const allowDefault = isProduction ? 'false' : 'true';
+export const ALLOW_NON_PARTICIPANTS_IN_CHATS = env('ALLOW_NON_PARTICIPANTS_IN_CHATS', allowDefault).toLowerCase() === 'true';
+
 // Logging and auth header
 export const LOG_LEVEL = env('LOG_LEVEL', 'info'); // silent | error | info | debug
 export const AUTH_HEADER_NAME = env('AUTH_HEADER_NAME', 'Authorization');

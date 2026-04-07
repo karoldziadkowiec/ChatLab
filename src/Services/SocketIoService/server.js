@@ -15,7 +15,8 @@ import {
   MAX_HTTP_BUFFER_SIZE,
   SOCKETIO_TRANSPORTS,
   LOG_LEVEL,
-  AUTH_HEADER_NAME
+  AUTH_HEADER_NAME,
+  ALLOW_NON_PARTICIPANTS_IN_CHATS
 } from './config.js';
 
 const PORT = CONFIG_PORT;
@@ -61,26 +62,47 @@ io.on('connection', (socket) => {
     : undefined;
 
   // Join a room per chatId so broadcasts only go to participants
-  socket.on('join', async (payload) => {
+  socket.on('join', async (payload, ack) => {
     try {
       const { chatId, userId, authorization } = payload || {};
-      if (!chatId || !userId) return;
+      if (!chatId || !userId) {
+        if (typeof ack === 'function') ack({ ok: false, error: 'Invalid join payload' });
+        return;
+      }
+
+      const allowNonParticipants = (process.env.NODE_ENV !== 'production') && ALLOW_NON_PARTICIPANTS_IN_CHATS;
+      if (allowNonParticipants) {
+        const room = `chat-${chatId}`;
+        socket.join(room);
+        socket.data.loadTestingOverride = true;
+        log.debug(`Socket ${socket.id} joined room ${room} (userId=${userId}, load-testing override)`);
+        if (typeof ack === 'function') ack({ ok: true });
+        return;
+      }
+
       const authHeader = authorization || (socket.handshake?.auth?.authorization);
       const headers = authHeader ? { [AUTH_HEADER_NAME]: authHeader } : hsHeader;
       const resp = await api.get(`/api/core/chats/${chatId}`, { headers });
       const chat = resp.data || {};
+      log.debug('Join check', { chatId, userId, chatUser1Id: chat.user1Id, chatUser2Id: chat.user2Id });
       const allowed = `${chat.user1Id}` === `${userId}` || `${chat.user2Id}` === `${userId}`;
       if (!allowed) {
         log.info(`Unauthorized join attempt: userId=${userId} chatId=${chatId}`);
+        socket.emit('join_error', 'Unauthorized join');
         socket.emit('error', 'Unauthorized join');
+        if (typeof ack === 'function') ack({ ok: false, error: 'Unauthorized join' });
         return;
       }
       const room = `chat-${chatId}`;
       socket.join(room);
+      socket.data.loadTestingOverride = false;
       log.debug(`Socket ${socket.id} joined room ${room} (userId=${userId})`);
+      if (typeof ack === 'function') ack({ ok: true });
     } catch (e) {
       log.error('join error:', e?.response?.data || e.message);
+      socket.emit('join_error', 'Join failed');
       socket.emit('error', 'Join failed');
+      if (typeof ack === 'function') ack({ ok: false, error: 'Join failed' });
     }
   });
 
@@ -94,19 +116,21 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Rate limit check
-      const now = Date.now();
-      const rate = socket.data.rate || { count: 0, windowStart: now };
-      if (now - rate.windowStart >= RATE.windowMs) {
-        rate.windowStart = now;
-        rate.count = 0;
-      }
-      rate.count += 1;
-      socket.data.rate = rate;
-      if (rate.count > RATE.max) {
-        const err = { error: 'Rate limit exceeded' };
-        if (typeof ack === 'function') ack(err);
-        return;
+      // Rate limit check (disabled when load-testing override is enabled)
+      if (!socket.data.loadTestingOverride) {
+        const now = Date.now();
+        const rate = socket.data.rate || { count: 0, windowStart: now };
+        if (now - rate.windowStart >= RATE.windowMs) {
+          rate.windowStart = now;
+          rate.count = 0;
+        }
+        rate.count += 1;
+        socket.data.rate = rate;
+        if (rate.count > RATE.max) {
+          const err = { error: 'Rate limit exceeded' };
+          if (typeof ack === 'function') ack(err);
+          return;
+        }
       }
 
       const authHeader = authorization || (socket.handshake?.auth?.authorization);

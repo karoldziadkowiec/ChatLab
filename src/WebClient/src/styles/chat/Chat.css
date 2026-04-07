@@ -87,6 +87,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
     background: #212529;
     color: #fff;
     padding: 10px 14px;
@@ -98,6 +100,18 @@
     display: flex;
     align-items: center;
     gap: 12px
+}
+
+.chat-header__right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.chat-header__metrics {
+    line-height: 1.2;
 }
 
 .chat-avatar {

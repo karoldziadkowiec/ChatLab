@@ -77,6 +77,7 @@ services:
       - SOCKETIO_PORT=8016
       - GATEWAY_URL=http://gateway:8000
       - WEBCLIENT_ORIGIN=http://localhost:3000
+      - ALLOW_NON_PARTICIPANTS_IN_CHATS=true
     ports:
       - "8016:8016"
     networks:

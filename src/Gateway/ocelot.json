@@ -1,6 +1,13 @@
 {
   "Routes": [
     {
+      "DownstreamPathTemplate": "/api/core/chat/stream",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
+      "UpstreamPathTemplate": "/api/core/chat/stream",
+      "UpstreamHttpMethod": ["GET", "OPTIONS"]
+    },
+    {
       "DownstreamPathTemplate": "/api/core/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
@@ -75,8 +82,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
       "UpstreamPathTemplate": "/chatlab.grpc.ChatGrpc/{everything}",
-      "UpstreamHttpMethod": ["POST", "OPTIONS"],
-      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
+      "UpstreamHttpMethod": ["POST", "OPTIONS"]
     }
   ],
   "GlobalConfiguration": {

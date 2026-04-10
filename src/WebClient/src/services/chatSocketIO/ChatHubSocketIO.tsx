@@ -33,17 +33,30 @@ class ChatHubSocketIO {
 		this.baseUrl = baseUrl ?? ChatHubSocketIoBaseUrl;
 		this.path = path ?? ChatHubSocketIoPath;
 
-		// Sensible defaults optimized for perf (prefer websocket)
-		this.transports = options?.transports ?? ["websocket", "polling"];
+		// Defaults for load tests:
+		// - Prefer websocket-only to avoid long-polling fallback, which generates extra GET traffic.
+		// - If you *want* to test polling fallback, pass options.transports explicitly.
+		this.transports = options?.transports ?? ["websocket"];
 		this.reconnection = options?.reconnection ?? true;
 		this.reconnectionAttempts = options?.reconnectionAttempts ?? 5;
 		this.reconnectionDelay = options?.reconnectionDelay ?? 500;
 		this.reconnectionDelayMax = options?.reconnectionDelayMax ?? 3000;
-		this.timeoutMs = options?.timeoutMs ?? 8000;
+		// Under load the server-side ack can be delayed (it waits for Gateway/CoreService/DB).
+		// Keep it reasonably high to avoid false client timeouts.
+		this.timeoutMs = options?.timeoutMs ?? 15000;
 	}
 
 	async connect(chatId: number, userId: string): Promise<void> {
 		return new Promise((resolve, reject) => {
+			let settled = false;
+			const done = (err?: Error) => {
+				if (settled) return;
+				settled = true;
+				if (joinTimeoutId) window.clearTimeout(joinTimeoutId);
+				if (err) reject(err);
+				else resolve();
+			};
+
 			this.socket = io(this.baseUrl, {
 				path: this.path,
 				transports: this.transports,
@@ -57,22 +70,32 @@ class ChatHubSocketIO {
 			});
 
 			this.socket.on('connect', () => {
+				// Guard against hanging joins under load.
+				joinTimeoutId = window.setTimeout(() => {
+					try { this.socket?.disconnect(); } catch { /* ignore */ }
+					done(new Error('Timeout waiting for join ack'));
+				}, this.timeoutMs);
+
 				// Require server-side join ack so we're not "connected but not in room".
 				this.socket?.emit('join', { chatId, userId }, (resp: any) => {
 					if (resp && resp.ok === true) {
-						resolve();
+						done();
 						return;
 					}
 					const message = resp?.error ? String(resp.error) : 'Join failed';
 					try {
 						this.socket?.disconnect();
 					} finally {
-						reject(new Error(message));
+						done(new Error(message));
 					}
 				});
 			});
 
-			this.socket.on('connect_error', (err) => reject(err));
+			let joinTimeoutId: number | null = null;
+			this.socket.on('connect_error', (err) => {
+				try { this.socket?.disconnect(); } catch { /* ignore */ }
+				done(err instanceof Error ? err : new Error(String(err)));
+			});
 		});
 	}
 

@@ -11,6 +11,7 @@ type Options = {
 class ChatHubGRPC {
 	private onMessageCb: (message: Message) => void;
 	private client: any | null = null;
+	private unaryClient: any | null = null;
 	private stream: any | null = null;
 	private chatId: number | null = null;
 	private lastMessageId: number | null = null;
@@ -18,13 +19,18 @@ class ChatHubGRPC {
 	private maxReconnectDelayMs = 10000;
 	private baseReconnectDelayMs = 500;
 	private stopRequested = false;
-	private baseUrl: string;
+	private streamBaseUrl: string;
+	private unaryBaseUrl: string;
 	private triedGatewayFallbackForStream = false;
 
 	constructor(onMessage: (message: Message) => void, options?: Options) {
 		this.onMessageCb = onMessage;
-		// Prefer CoreService directly for stable server-streaming.
-		this.baseUrl = CORE_GRPC_DIRECT_BASE;
+		// IMPORTANT:
+		// - Server streaming via gRPC-web is often buffered/broken by gateways/proxies.
+		//   Use CoreService directly for the stream so we can measure echo reliably.
+		// - Unary SendMessage can still go through the Gateway to keep traffic patterns comparable.
+		this.streamBaseUrl = CORE_GRPC_DIRECT_BASE;
+		this.unaryBaseUrl = CORE_GRPC_BASE;
 	}
 
 	async startConnection(chatId: number, userId?: string): Promise<void> {
@@ -32,7 +38,7 @@ class ChatHubGRPC {
 		this.stopRequested = false;
 		this.chatId = chatId;
 		this.stopCurrentStream();
-		this.client = new ChatGrpcClient(this.baseUrl, null, {});
+		this.client = new ChatGrpcClient(this.streamBaseUrl, null, {});
 		const md = await buildAuthMetadata();
 		const req = new StreamRequest();
 		req.setChatid(chatId);
@@ -60,9 +66,9 @@ class ChatHubGRPC {
 			if (this.stopRequested) return;
 
 			// If CoreService direct port is down (ERR_CONNECTION_REFUSED/RESET), fall back to gateway.
-			if (!this.triedGatewayFallbackForStream && this.baseUrl === CORE_GRPC_DIRECT_BASE && this.isNetworkUnavailableError(err)) {
+			if (!this.triedGatewayFallbackForStream && this.streamBaseUrl === CORE_GRPC_DIRECT_BASE && this.isNetworkUnavailableError(err)) {
 				this.triedGatewayFallbackForStream = true;
-				this.baseUrl = CORE_GRPC_BASE;
+				this.streamBaseUrl = CORE_GRPC_BASE;
 				this.reconnectAttempts = 0;
 				try { this.stopCurrentStream(); } catch { }
 				this.startConnection(chatId, userId).catch(() => { /* ignore */ });
@@ -82,8 +88,9 @@ class ChatHubGRPC {
 	}
 
 	async sendMessage(dto: MessageSendDTO): Promise<Message> {
-		if (!this.client) {
-			this.client = new ChatGrpcClient(this.baseUrl, null, {});
+		// Use a separate unary client (Gateway) so streaming remains stable.
+		if (!this.unaryClient) {
+			this.unaryClient = new ChatGrpcClient(this.unaryBaseUrl, null, {});
 		}
 		const md = await buildAuthMetadata();
 		const req = new PbMessageSend();
@@ -93,7 +100,7 @@ class ChatHubGRPC {
 		req.setCommunicationtechnologyid(dto.communicationTechnologyId);
 		req.setContent(dto.content);
 		return new Promise<Message>((resolve, reject) => {
-			this.client.sendMessage(req, md, (err: any, pb: PbMessage) => {
+			this.unaryClient.sendMessage(req, md, (err: any, pb: PbMessage) => {
 				if (err) {
 					reject(err);
 					return;

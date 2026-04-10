@@ -8,6 +8,7 @@ import {
   SOCKETIO_PORT as CONFIG_PORT,
   GATEWAY_URL as CONFIG_GATEWAY_URL,
   WEBCLIENT_ORIGIN as CONFIG_WEBCLIENT_ORIGIN,
+  API_TIMEOUT_MS,
   RATE_LIMIT_WINDOW_MS,
   RATE_LIMIT_MAX,
   PING_TIMEOUT_MS,
@@ -46,7 +47,8 @@ const log = {
 // Axios client with keep-alive
 const api = axios.create({
   baseURL: CONFIG_GATEWAY_URL,
-  httpAgent: new http.Agent({ keepAlive: true })
+  httpAgent: new http.Agent({ keepAlive: true }),
+  timeout: API_TIMEOUT_MS
 });
 
 // Simple per-socket rate limiting
@@ -151,8 +153,16 @@ io.on('connection', (socket) => {
         if (typeof ack === 'function') ack({ error: 'Message persisted but not retrievable' });
       }
     } catch (error) {
-      log.error('Failed to persist/broadcast message:', error?.response?.data || error.message);
-      const err = { error: 'Failed to send message' };
+      const status = error?.response?.status;
+      const upstreamMsg = error?.response?.data?.message || error?.response?.data?.error;
+      log.error('Failed to persist/broadcast message:', { status, upstreamMsg, message: error?.message });
+
+      // Provide a compact, actionable error. (Avoid dumping full upstream payloads.)
+      const err = status
+        ? { error: `Upstream error (${status})` }
+        : (String(error?.message || '').toLowerCase().includes('timeout')
+          ? { error: `Upstream timeout (${API_TIMEOUT_MS} ms)` }
+          : { error: 'Failed to send message' });
       if (typeof ack === 'function') ack(err);
     }
   });

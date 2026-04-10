@@ -18,6 +18,10 @@ export const PING_INTERVAL_MS = parseInt(env('PING_INTERVAL_MS', '25000'), 10);
 export const MAX_HTTP_BUFFER_SIZE = parseInt(env('MAX_HTTP_BUFFER_SIZE', '1048576'), 10);
 export const SOCKETIO_TRANSPORTS = env('SOCKETIO_TRANSPORTS', 'websocket'); 
 
+// Upstream HTTP timeout (SocketIoService -> Gateway). Without this, axios can hang under load
+// and the client will time out waiting for the Socket.IO ack.
+export const API_TIMEOUT_MS = parseInt(env('API_TIMEOUT_MS', '15000'), 10);
+
 // Load testing (Development only): allow any user to join any chat room.
 // Default: true in non-production, false in production. Can be overridden by env var.
 const isProduction = (process.env.NODE_ENV ?? '').toLowerCase() === 'production';

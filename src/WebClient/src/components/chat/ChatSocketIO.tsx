@@ -355,6 +355,10 @@ const ChatSocketIO = () => {
 
         setIsAutoSending(true);
 
+        // Reset receive-correlation state so metrics are not affected by previous runs.
+        receivedMessageIdsRef.current.clear();
+        receiveWaitersRef.current.clear();
+
         // Reset run aggregates.
         const runStartPerfMs = performance.now();
         runStartPerfMsRef.current = runStartPerfMs;

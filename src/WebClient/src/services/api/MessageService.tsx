@@ -152,10 +152,11 @@ const MessageService = {
         }
     },
 
-    async sendMessage(dto: MessageSendDTO): Promise<Message> {
+    async sendMessage(dto: MessageSendDTO, baseUrlOverride?: string): Promise<Message> {
         try {
             const authorizationHeader = await AccountService.getAuthorizationHeader();
-            const response = await axios.post<Message>(`${ApiCoreURL}/messages`, dto, {
+            const baseUrl = baseUrlOverride ?? ApiCoreURL;
+            const response = await axios.post<Message>(`${baseUrl}/messages`, dto, {
                 headers: {
                     'Authorization': authorizationHeader
                 }

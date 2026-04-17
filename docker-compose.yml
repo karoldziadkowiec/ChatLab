@@ -78,6 +78,9 @@ services:
       - GATEWAY_URL=http://gateway:8000
       - WEBCLIENT_ORIGIN=http://localhost:3000
       - ALLOW_NON_PARTICIPANTS_IN_CHATS=true
+      # Perf/load tests: bypass Gateway/Core REST and write directly to SQL Server
+      - USE_DIRECT_DB=true
+      - DB_CONNECTION_STRING=Server=sqlserver;Database=ChatLab;User Id=sa;Password=Your_password123;TrustServerCertificate=True;MultipleActiveResultSets=true
     ports:
       - "8016:8016"
     networks:

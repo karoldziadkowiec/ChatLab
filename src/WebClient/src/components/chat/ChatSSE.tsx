@@ -19,6 +19,8 @@ import '../../App.css';
 import '../../styles/chat/Chat.css';
 
 const ChatSSE = () => {
+    // Connect SSE directly to CoreService: gateways/proxies (Ocelot) commonly buffer SSE streams,
+    // which makes messages appear only after refresh.
     const SSE_DIRECT_CORE_URL = 'http://localhost:8001/api/core';
     const METRICS_TOAST_ID = 'sse-send-metrics';
     const THROUGHPUT_WINDOW_MS = 10_000;
@@ -238,7 +240,7 @@ const ChatSSE = () => {
     }, [id, userId]);
 
     useEffect(() => {
-        if (userId && id) {
+        if (id) {
             const client = new ChatSseClient(Number(id), (message) => {
                 const maybeIdRaw = (message as any)?.id ?? (message as any)?.Id;
                 const maybeId = typeof maybeIdRaw === 'number'
@@ -332,7 +334,7 @@ const ChatSSE = () => {
                 content
             };
 
-            const created = await MessageService.sendMessage(dto);
+            const created = await MessageService.sendMessage(dto, SSE_DIRECT_CORE_URL);
             if (!created || typeof created.id !== 'number') {
                 throw new Error('SendMessage did not return created message with id.');
             }

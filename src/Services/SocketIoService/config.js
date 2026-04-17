@@ -31,3 +31,17 @@ export const ALLOW_NON_PARTICIPANTS_IN_CHATS = env('ALLOW_NON_PARTICIPANTS_IN_CH
 // Logging and auth header
 export const LOG_LEVEL = env('LOG_LEVEL', 'info'); // silent | error | info | debug
 export const AUTH_HEADER_NAME = env('AUTH_HEADER_NAME', 'Authorization');
+
+// Performance testing mode: bypass Gateway/Core REST and write directly to the DB.
+// NOTE: Intended for perf/load tests; keep disabled in production.
+export const USE_DIRECT_DB = env('USE_DIRECT_DB', 'false').toLowerCase() === 'true';
+
+// DB connection string used only when USE_DIRECT_DB=true.
+// Default targets local SQL Server (Windows auth) to support running without Docker.
+// For Docker compose we override this via env (Server=sqlserver;User Id=sa;Password=...).
+const DEFAULT_LOCAL_DB_CONNECTION_STRING = "Server=.;Database=ChatLab;Integrated Security=true;TrustServerCertificate=True;MultipleActiveResultSets=true";
+export const DB_CONNECTION_STRING = env('DB_CONNECTION_STRING', DEFAULT_LOCAL_DB_CONNECTION_STRING);
+
+// When using Integrated Security on Windows, we may use the optional msnodesqlv8 driver.
+// This setting controls the ODBC driver name in the generated ODBC connection string.
+export const DB_ODBC_DRIVER = env('DB_ODBC_DRIVER', 'ODBC Driver 17 for SQL Server');

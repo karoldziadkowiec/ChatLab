@@ -15,7 +15,15 @@ export default class ChatSseClient {
 
     connect() {
         const url = `${this.baseUrl}/chat/stream?chatId=${this.chatId}`;
-        this.eventSource = new EventSource(url);
+        // withCredentials helps when the backend auth/session is cookie-based.
+        // (Even if this SSE endpoint is anonymous today, this keeps it working when auth is enabled later.)
+        this.eventSource = new EventSource(url, { withCredentials: true });
+
+        // The server sends a one-time 'connected' event (not a default 'message').
+        // Treat it as a heartbeat/diagnostic only.
+        this.eventSource.addEventListener('connected', () => {
+            // no-op
+        });
 
         this.eventSource.onmessage = (event) => {
             try {

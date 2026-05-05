@@ -1,6 +1,7 @@
 ﻿using ChatLab.CoreService.DbManager;
 using ChatLab.CoreService.Entities;
 using ChatLab.CoreService.Models.DTOs;
+using ChatLab.CoreService.RealTime.GRPC.Streaming;
 using ChatLab.CoreService.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,10 +10,12 @@ namespace ChatLab.CoreService.Services.Classes
     public class MessageService : IMessageService
     {
         private readonly AppDbContext _dbContext;
+        private readonly IChatMessageBus _messageBus;
 
-        public MessageService(AppDbContext dbContext)
+        public MessageService(AppDbContext dbContext, IChatMessageBus messageBus)
         {
             _dbContext = dbContext;
+            _messageBus = messageBus;
         }
 
         public async Task<Message> GetMessageById(int messageId)
@@ -93,6 +96,10 @@ namespace ChatLab.CoreService.Services.Classes
 
             _dbContext.Messages.Add(message);
             await _dbContext.SaveChangesAsync();
+
+            // Push to in-memory bus for realtime stream subscribers (gRPC StreamChat, etc.).
+            // Note: message may not have navigation properties populated (CommunicationTechnology, etc.).
+            _messageBus.Publish(message);
 
             return message;
         }

@@ -4,6 +4,7 @@ using Proto = Chatlab.Grpc;
 using Google.Protobuf.WellKnownTypes;
 using ChatLab.CoreService.Services.Interfaces;
 using ChatLab.CoreService.Models.DTOs;
+using ChatLab.CoreService.RealTime.GRPC.Streaming;
 
 namespace ChatLab.CoreService.RealTime.GRPC.Services
 {
@@ -13,16 +14,14 @@ namespace ChatLab.CoreService.RealTime.GRPC.Services
         private readonly IMessageService _messageService;
         private readonly IChatService _chatService;
         private readonly ILogger<ChatGrpcService> _logger;
-		private readonly int _streamPollIntervalMs;
+        private readonly IChatMessageBus _messageBus;
 
-        public ChatGrpcService(IMessageService messageService, IChatService chatService, ILogger<ChatGrpcService> logger, IConfiguration configuration)
+        public ChatGrpcService(IMessageService messageService, IChatService chatService, ILogger<ChatGrpcService> logger, IChatMessageBus messageBus)
         {
             _messageService = messageService;
             _chatService = chatService;
             _logger = logger;
-
-			var configured = configuration.GetValue<int?>("Grpc:StreamPollIntervalMs");
-			_streamPollIntervalMs = Math.Clamp(configured ?? 200, 20, 5000);
+            _messageBus = messageBus;
         }
 
         public override async Task<Proto.Message> SendMessage(Proto.MessageSend request, ServerCallContext context)
@@ -95,33 +94,56 @@ namespace ChatLab.CoreService.RealTime.GRPC.Services
                 }
             }
 
+            var ct = context.CancellationToken;
+
+            // Subscribe first to avoid missing messages during initial catch-up.
+            var reader = _messageBus.Subscribe(request.ChatId, ct);
             var lastId = request.SinceMessageId > 0 ? request.SinceMessageId : 0;
-            while (!context.CancellationToken.IsCancellationRequested)
+
+            // One-time catch-up from DB (no polling loop).
+            try
             {
-                try
+                var existing = await _messageService.GetMessagesForChatAfterId(request.ChatId, lastId);
+                foreach (var m in existing)
                 {
-                    var msgs = await _messageService.GetMessagesForChatAfterId(request.ChatId, lastId);
-                    foreach (var m in msgs)
+                    var outMsg = new Proto.Message
                     {
-                        var outMsg = new Proto.Message
-                        {
-                            Id = m.Id,
-                            ChatId = m.ChatId,
-                            SenderId = m.SenderId,
-                            ReceiverId = m.ReceiverId,
-                            Content = m.Content,
-                            Timestamp = Timestamp.FromDateTime(m.Timestamp.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(m.Timestamp, DateTimeKind.Utc) : m.Timestamp.ToUniversalTime()),
-                            TechnologyName = m.CommunicationTechnology?.Name ?? string.Empty
-                        };
-                        await responseStream.WriteAsync(outMsg);
-                        lastId = m.Id;
-                    }
+                        Id = m.Id,
+                        ChatId = m.ChatId,
+                        SenderId = m.SenderId,
+                        ReceiverId = m.ReceiverId,
+                        Content = m.Content,
+                        Timestamp = Timestamp.FromDateTime(m.Timestamp.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(m.Timestamp, DateTimeKind.Utc) : m.Timestamp.ToUniversalTime()),
+                        TechnologyName = m.CommunicationTechnology?.Name ?? string.Empty
+                    };
+                    await responseStream.WriteAsync(outMsg);
+                    lastId = m.Id;
                 }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Initial catch-up failed for chat {ChatId}", request.ChatId);
+            }
+
+            // Push streaming: emit new messages as they are created.
+            await foreach (var m in reader.ReadAllAsync(ct))
+            {
+                if (m.ChatId != request.ChatId) continue;
+                if (m.Id <= lastId) continue;
+
+                var outMsg = new Proto.Message
                 {
-                    _logger.LogError(ex, "Error streaming chat {ChatId}", request.ChatId);
-                }
-				await Task.Delay(_streamPollIntervalMs, context.CancellationToken);
+                    Id = m.Id,
+                    ChatId = m.ChatId,
+                    SenderId = m.SenderId,
+                    ReceiverId = m.ReceiverId,
+                    Content = m.Content,
+                    Timestamp = Timestamp.FromDateTime(m.Timestamp.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(m.Timestamp, DateTimeKind.Utc) : m.Timestamp.ToUniversalTime()),
+                    TechnologyName = m.CommunicationTechnology?.Name ?? string.Empty
+                };
+
+                await responseStream.WriteAsync(outMsg);
+                lastId = m.Id;
             }
         }
     }

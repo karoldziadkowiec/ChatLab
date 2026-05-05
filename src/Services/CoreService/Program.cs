@@ -2,6 +2,7 @@ using ChatLab.CoreService.DbManager;
 using ChatLab.CoreService.Entities;
 using ChatLab.CoreService.Models.Constants;
 using ChatLab.CoreService.RealTime.GRPC.Services;
+using ChatLab.CoreService.RealTime.GRPC.Streaming;
 using ChatLab.CoreService.RealTime.SignalR;
 using ChatLab.CoreService.RealTime.SSE.Classes;
 using ChatLab.CoreService.RealTime.SSE.Interfaces;
@@ -162,6 +163,9 @@ namespace ChatLab.CoreService
 
             // SSE
             builder.Services.AddSingleton<IChatSseService, ChatSseService>();
+
+            // gRPC streaming push bus (in-memory)
+            builder.Services.AddSingleton<IChatMessageBus, ChatMessageBus>();
 
             // gRPC services
             builder.Services.AddGrpc();

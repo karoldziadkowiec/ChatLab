@@ -15,6 +15,7 @@ import {
   PING_INTERVAL_MS,
   MAX_HTTP_BUFFER_SIZE,
   SOCKETIO_TRANSPORTS,
+  MAX_MESSAGE_CONTENT_LENGTH,
   LOG_LEVEL,
   AUTH_HEADER_NAME,
   ALLOW_NON_PARTICIPANTS_IN_CHATS,
@@ -158,7 +159,8 @@ const dbInsertMessage = async (dto) => {
   const req = pool.request();
 
   req.input('chatId', _mssql.Int, dto.chatId);
-  req.input('content', _mssql.NVarChar(200), dto.content);
+  // Note: SQL Server NVARCHAR(n) supports max n=4000. For larger payloads we use NVARCHAR(MAX).
+  req.input('content', _mssql.NVarChar(_mssql.MAX), dto.content);
   req.input('senderId', _mssql.NVarChar(450), dto.senderId);
   req.input('receiverId', _mssql.NVarChar(450), dto.receiverId);
   req.input('techId', _mssql.Int, dto.communicationTechnologyId);
@@ -308,8 +310,8 @@ io.on('connection', (socket) => {
         return;
       }
 
-      if (typeof messageDto.content === 'string' && messageDto.content.length > 200) {
-        if (typeof ack === 'function') ack({ error: 'Message content exceeds 200 characters' });
+      if (typeof messageDto.content === 'string' && messageDto.content.length > MAX_MESSAGE_CONTENT_LENGTH) {
+        if (typeof ack === 'function') ack({ error: `Message content exceeds ${MAX_MESSAGE_CONTENT_LENGTH} characters` });
         return;
       }
 

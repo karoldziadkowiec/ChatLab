@@ -1,5 +1,4 @@
-import GatewayPORT from "./GatewayConfig";
+const SocketIoPORT: number = 8016;
+const ChatHubSocketIoBaseUrl = `http://localhost:${SocketIoPORT}`;
 
-const gatewayPort = GatewayPORT;
-
-export default `http://localhost:${gatewayPort}`;
+export default ChatHubSocketIoBaseUrl;

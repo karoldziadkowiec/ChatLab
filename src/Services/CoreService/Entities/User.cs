@@ -15,7 +15,7 @@ namespace ChatLab.CoreService.Entities
 
         [Required]
         [Phone]
-        public string PhoneNumber { get; set; }
+        public new string PhoneNumber { get; set; }
 
         [Required]
         [MaxLength(40)]

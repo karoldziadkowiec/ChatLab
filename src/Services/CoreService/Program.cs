@@ -95,7 +95,8 @@ namespace ChatLab.CoreService
                                 ExtractToken(headers["x-authorization"].FirstOrDefault()) ??
                                 ExtractToken(headers["X-Authorization"].FirstOrDefault()) ??
                                 ExtractToken(headers["x-grpc-authorization"].FirstOrDefault()) ??
-                                ExtractToken(headers["X-Grpc-Authorization"].FirstOrDefault());
+                                ExtractToken(headers["X-Grpc-Authorization"].FirstOrDefault()) ??
+                                ExtractToken(ctx.Request.Query["access_token"].FirstOrDefault());
                             if (!string.IsNullOrWhiteSpace(candidate))
                             {
                                 ctx.Token = candidate;
@@ -145,7 +146,7 @@ namespace ChatLab.CoreService
             builder.Services.AddScoped<ICommunicationTechnologyRepository, CommunicationTechnologyRepository>();
 
             // AutoMapper service
-            builder.Services.AddAutoMapper(typeof(Program));
+            builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 
             // Password hasher
             builder.Services.AddTransient<IPasswordHasher<User>, PasswordHasher<User>>();

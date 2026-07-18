@@ -1,4 +1,7 @@
 ﻿using ChatLab.CoreService.RealTime.SSE.Interfaces;
+using ChatLab.CoreService.RealTime.Authorization;
+using ChatLab.CoreService.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
@@ -10,15 +13,39 @@ namespace ChatLab.CoreService.Controllers
     public class ChatSseController : ControllerBase
     {
         private readonly IChatSseService _sseService;
+        private readonly IChatService _chatService;
 
-        public ChatSseController(IChatSseService sseService)
+        public ChatSseController(IChatSseService sseService, IChatService chatService)
         {
             _sseService = sseService;
+            _chatService = chatService;
         }
 
+        [Authorize]
         [HttpGet("stream")]
         public async Task GetStream([FromQuery] string chatId)
         {
+            if (!int.TryParse(chatId, out var numericChatId))
+            {
+                Response.StatusCode = StatusCodes.Status400BadRequest;
+                return;
+            }
+
+            try
+            {
+                await ChatRoomAuthorizationHelper.RequireChatMemberAsync(_chatService, numericChatId, ChatRoomAuthorizationHelper.GetCurrentUserId(User));
+            }
+            catch (ArgumentException)
+            {
+                Response.StatusCode = StatusCodes.Status404NotFound;
+                return;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Response.StatusCode = StatusCodes.Status403Forbidden;
+                return;
+            }
+
             // Required for proper SSE streaming (avoid server/proxy buffering)
             HttpContext.Features.Get<IHttpResponseBodyFeature>()?.DisableBuffering();
 
@@ -33,7 +60,7 @@ namespace ChatLab.CoreService.Controllers
             {
                 AutoFlush = false
             };
-            _sseService.AddClient(chatId, writer);
+            _sseService.AddClient(numericChatId.ToString(), writer);
 
             await writer.WriteLineAsync("event: connected");
             await writer.WriteLineAsync($"data: Connected to chat {chatId}");
@@ -71,7 +98,7 @@ namespace ChatLab.CoreService.Controllers
             }
             finally
             {
-                _sseService.RemoveClient(chatId, writer);
+                _sseService.RemoveClient(numericChatId.ToString(), writer);
             }
         }
     }

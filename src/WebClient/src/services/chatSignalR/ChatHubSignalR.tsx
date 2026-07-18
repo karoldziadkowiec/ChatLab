@@ -2,6 +2,7 @@ import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signal
 import ChatHubURL from '../../config/ChatHubSignalRConfig';
 import Message from '../../models/interfaces/Message';
 import MessageSendDTO from '../../models/dtos/MessageSendDTO';
+import AccountService from '../api/AccountService';
 
 type ChatHubSignalROptions = {
     enableLogging?: boolean;
@@ -23,7 +24,9 @@ class ChatHubSignalR {
     public async startConnection(chatId: number, userId: string): Promise<void> {
         this.chatId = chatId;
         this.connection = new HubConnectionBuilder()
-            .withUrl(ChatHubURL)
+            .withUrl(ChatHubURL, {
+                accessTokenFactory: async () => (await AccountService.getToken()) ?? ''
+            })
             .withAutomaticReconnect(this.reconnectDelays)
             .configureLogging(this.enableLogging ? LogLevel.Information : LogLevel.None)
             .build();

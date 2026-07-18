@@ -1,10 +1,10 @@
 ﻿using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using System.Security.Claims;
 using ChatLab.CoreService.Models.DTOs;
 using ChatLab.CoreService.Services.Interfaces;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
+using ChatLab.CoreService.RealTime.Authorization;
 
 public class ChatWebSocketHandler
 {
@@ -12,7 +12,6 @@ public class ChatWebSocketHandler
     private readonly IMessageService _messageService;
     private readonly IChatService _chatService;
     private readonly ILogger<ChatWebSocketHandler> _logger;
-    private readonly bool _allowNonParticipants;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     private const int MaxMessageBytes = 64 * 1024; // maximum message size
     private const int MaxMessagesPerSecond = 10; // simple per-connection rate limit
@@ -24,21 +23,15 @@ public class ChatWebSocketHandler
         WebSocketConnectionManager connections,
         IMessageService messageService,
         IChatService chatService,
-        ILogger<ChatWebSocketHandler> logger,
-        IConfiguration configuration,
-        IHostEnvironment environment)
+        ILogger<ChatWebSocketHandler> logger)
     {
         _connections = connections;
         _messageService = messageService;
         _chatService = chatService;
         _logger = logger;
-
-        // For load/performance testing in Development only: allow any authenticated user to join/send
-        // messages in a 1:1 chat without changing the data model.
-        _allowNonParticipants = environment.IsDevelopment() && configuration.GetValue<bool>("LoadTesting:AllowNonParticipantsInChats");
     }
 
-    public async Task HandleAsync(WebSocket socket, string connectionId, CancellationToken ct)
+    public async Task HandleAsync(WebSocket socket, string connectionId, CancellationToken ct, ClaimsPrincipal? user)
     {
         _connections.AddSocket(connectionId, socket);
 
@@ -108,9 +101,21 @@ public class ChatWebSocketHandler
                         break;
                     }
 
-                    // Validate chat exists + membership (unless load-testing override is enabled)
-                    var chat = await _chatService.GetChatById(chatId);
-                    if (chat == null)
+                    var currentUserId = ChatRoomAuthorizationHelper.GetCurrentUserId(user);
+                    if (!string.Equals(currentUserId, userId, StringComparison.Ordinal))
+                    {
+                        _logger.LogWarning("User identity mismatch for {ConnectionId}.", connectionId);
+                        var denyJson = JsonSerializer.Serialize(new { type = "error", code = "identity_mismatch", message = "User identity mismatch." });
+                        await SafeSendAsync(socket, denyJson, ct);
+                        await socket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "Identity mismatch", ct);
+                        break;
+                    }
+
+                    try
+                    {
+                        await ChatRoomAuthorizationHelper.RequireChatAccessAsync(_chatService, chatId, user);
+                    }
+                    catch (ArgumentException)
                     {
                         _logger.LogWarning("Chat {ChatId} not found. Closing connection {ConnectionId}", chatId, connectionId);
                         var denyJson = JsonSerializer.Serialize(new { type = "error", code = "chat_not_found", message = "Chat not found." });
@@ -118,18 +123,13 @@ public class ChatWebSocketHandler
                         await socket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "Chat not found", ct);
                         break;
                     }
-
-                    if (!_allowNonParticipants)
+                    catch (UnauthorizedAccessException)
                     {
-                        var isMember = $"{chat.User1Id}" == userId || $"{chat.User2Id}" == userId;
-                        if (!isMember)
-                        {
-                            _logger.LogWarning("User {UserId} is not a member of chat {ChatId}. Closing connection {ConnectionId}", userId, chatId, connectionId);
-                            var denyJson = JsonSerializer.Serialize(new { type = "error", code = "not_member", message = "You are not a member of this chat." });
-                            await SafeSendAsync(socket, denyJson, ct);
-                            await socket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "Not a member of chat", ct);
-                            break;
-                        }
+                        _logger.LogWarning("User {UserId} is not a member of chat {ChatId}. Closing connection {ConnectionId}", userId, chatId, connectionId);
+                        var denyJson = JsonSerializer.Serialize(new { type = "error", code = "not_member", message = "You are not a member of this chat." });
+                        await SafeSendAsync(socket, denyJson, ct);
+                        await socket.CloseAsync(WebSocketCloseStatus.PolicyViolation, "Not a member of chat", ct);
+                        break;
                     }
 
                     _joinedChatId = chatId;
@@ -171,10 +171,25 @@ public class ChatWebSocketHandler
                     }
 
                     // Validate membership and data consistency
-                    if (_joinedChatId is null || _userId is null || _joinedChatId != chatId || !string.Equals(messageSendDto.SenderId, _userId, StringComparison.Ordinal))
+                    if (_joinedChatId is null || _userId is null || _joinedChatId != chatId || (!ChatRoomAuthorizationHelper.IsAdmin(user) && !string.Equals(messageSendDto.SenderId, _userId, StringComparison.Ordinal)))
                     {
                         _logger.LogWarning("Invalid send attempt: connectionId={ConnectionId}, chatId={ChatId}, senderId={SenderId}", connectionId, chatId, messageSendDto.SenderId);
                         var errJson = JsonSerializer.Serialize(new { type = "error", code = "invalid_sender", message = "Invalid sender or chat context." });
+                        await SafeSendAsync(socket, errJson, ct);
+                        continue;
+                    }
+
+                    var chat = await _chatService.GetChatById(chatId);
+                    if (chat == null)
+                    {
+                        var errJson = JsonSerializer.Serialize(new { type = "error", code = "chat_not_found", message = "Chat not found." });
+                        await SafeSendAsync(socket, errJson, ct);
+                        continue;
+                    }
+
+                    if (!ChatRoomAuthorizationHelper.CanUseReceiver(chat, messageSendDto.ReceiverId, user))
+                    {
+                        var errJson = JsonSerializer.Serialize(new { type = "error", code = "invalid_receiver", message = "Invalid receiver for this chat." });
                         await SafeSendAsync(socket, errJson, ct);
                         continue;
                     }

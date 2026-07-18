@@ -7,12 +7,16 @@ var builder = WebApplication.CreateBuilder(args);
 // Load Ocelot configuration
 builder.Configuration
     .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
+builder.Configuration
+    .AddJsonFile($"ocelot.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
+
+var webClientOrigin = builder.Configuration["Gateway:WebClientOrigin"] ?? "http://localhost:3000";
 
 // CORS for local dev (restrict origin & allow credentials)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("WebClient", policy =>
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins(webClientOrigin)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials());

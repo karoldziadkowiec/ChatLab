@@ -1,4 +1,5 @@
 ﻿using System.Net.WebSockets;
+using System.Security.Claims;
 
 public class WebSocketMiddleware
 {
@@ -40,7 +41,7 @@ public class WebSocketMiddleware
         {
             // Pass the socket to the handler; the handler uses scoped services,
             // so the scope must live until HandleAsync completes.
-            await handler.HandleAsync(socket, connectionId, cancellation);
+            await handler.HandleAsync(socket, connectionId, cancellation, context.User);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)

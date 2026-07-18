@@ -25,12 +25,6 @@ export const MAX_MESSAGE_CONTENT_LENGTH = parseInt(env('MAX_MESSAGE_CONTENT_LENG
 // and the client will time out waiting for the Socket.IO ack.
 export const API_TIMEOUT_MS = parseInt(env('API_TIMEOUT_MS', '15000'), 10);
 
-// Load testing (Development only): allow any user to join any chat room.
-// Default: true in non-production, false in production. Can be overridden by env var.
-const isProduction = (process.env.NODE_ENV ?? '').toLowerCase() === 'production';
-const allowDefault = isProduction ? 'false' : 'true';
-export const ALLOW_NON_PARTICIPANTS_IN_CHATS = env('ALLOW_NON_PARTICIPANTS_IN_CHATS', allowDefault).toLowerCase() === 'true';
-
 // Logging and auth header
 export const LOG_LEVEL = env('LOG_LEVEL', 'info'); // silent | error | info | debug
 export const AUTH_HEADER_NAME = env('AUTH_HEADER_NAME', 'Authorization');

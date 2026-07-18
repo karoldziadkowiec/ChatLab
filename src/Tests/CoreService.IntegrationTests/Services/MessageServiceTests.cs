@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ChatLab.CoreService.Entities;
 using ChatLab.CoreService.Models.DTOs;
+using ChatLab.CoreService.RealTime.GRPC.Streaming;
 using ChatLab.CoreService.Services.Classes;
 using CoreService.IntegrationTests.Fixtures;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +23,7 @@ namespace CoreService.IntegrationTests.Services
             _fixture = fixture;
         }
 
-        private MessageService CreateSvc() => new MessageService(_fixture.DbContext);
+        private MessageService CreateSvc() => new MessageService(_fixture.DbContext, new ChatMessageBus());
 
         [Fact]
         public async Task GetMessageById_ReturnsWithIncludes()

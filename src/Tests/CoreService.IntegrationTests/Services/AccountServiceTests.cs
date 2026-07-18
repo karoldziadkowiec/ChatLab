@@ -10,6 +10,7 @@ using ChatLab.CoreService.Services.Interfaces;
 using CoreService.IntegrationTests.Fixtures;
 using CoreService.IntegrationTests.Services.Fakes;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace CoreService.IntegrationTests.Services
@@ -23,7 +24,7 @@ namespace CoreService.IntegrationTests.Services
         public AccountServiceTests(CoreServiceDbFixture fixture)
         {
             _fixture = fixture;
-            var cfg = new MapperConfiguration(cfg => cfg.AddProfile(new MappingProfile()));
+            var cfg = new MapperConfiguration(cfg => cfg.AddProfile(new MappingProfile()), NullLoggerFactory.Instance);
             _mapper = cfg.CreateMapper();
         }
 

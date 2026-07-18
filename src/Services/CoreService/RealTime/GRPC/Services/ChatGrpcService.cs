@@ -1,10 +1,12 @@
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Proto = Chatlab.Grpc;
 using Google.Protobuf.WellKnownTypes;
 using ChatLab.CoreService.Services.Interfaces;
 using ChatLab.CoreService.Models.DTOs;
 using ChatLab.CoreService.RealTime.GRPC.Streaming;
+using ChatLab.CoreService.RealTime.Authorization;
 
 namespace ChatLab.CoreService.RealTime.GRPC.Services
 {
@@ -34,12 +36,12 @@ namespace ChatLab.CoreService.RealTime.GRPC.Services
 
             try
             {
-                // Optional: ensure sender belongs to chat
-                var chat = await _chatService.GetChatById(request.ChatId);
-                if (chat is null || (chat.User1Id != request.SenderId && chat.User2Id != request.SenderId))
-                {
-                    throw new RpcException(new Status(StatusCode.PermissionDenied, "User is not a member of this chat."));
-                }
+                var user = context.GetHttpContext()?.User;
+                var chat = await ChatRoomAuthorizationHelper.RequireChatAccessAsync(_chatService, request.ChatId, user);
+                ChatRoomAuthorizationHelper.RequireSenderMatchesCurrentUserOrAdmin(user, request.SenderId);
+
+                if (!ChatRoomAuthorizationHelper.CanUseReceiver(chat, request.ReceiverId, user))
+                    throw new RpcException(new Status(StatusCode.PermissionDenied, "Receiver is not a member of this chat."));
 
                 var dto = new MessageSendDTO
                 {
@@ -83,16 +85,15 @@ namespace ChatLab.CoreService.RealTime.GRPC.Services
 
         public override async Task StreamChat(Proto.StreamRequest request, IServerStreamWriter<Proto.Message> responseStream, ServerCallContext context)
         {
-            // Validate chat membership when userId is provided
+            var user = context.GetHttpContext()?.User;
+            var currentUserId = ChatRoomAuthorizationHelper.GetCurrentUserId(user);
             var reqUserId = string.IsNullOrWhiteSpace(request.UserId) ? null : request.UserId.Trim();
-            if (reqUserId != null)
+            if (!string.IsNullOrWhiteSpace(reqUserId) && !string.Equals(reqUserId, currentUserId, StringComparison.Ordinal))
             {
-                var chat = await _chatService.GetChatById(request.ChatId);
-                if (chat is null || (chat.User1Id != reqUserId && chat.User2Id != reqUserId))
-                {
-                    throw new RpcException(new Status(StatusCode.PermissionDenied, "User is not a member of this chat."));
-                }
+                throw new RpcException(new Status(StatusCode.PermissionDenied, "User identity mismatch."));
             }
+
+            await ChatRoomAuthorizationHelper.RequireChatAccessAsync(_chatService, request.ChatId, user);
 
             var ct = context.CancellationToken;
 

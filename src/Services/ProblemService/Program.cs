@@ -64,7 +64,7 @@ namespace ChatLab.ProblemService
             builder.Services.AddScoped<IProblemRepository, ProblemRepository>();
 
             // AutoMapper service
-            builder.Services.AddAutoMapper(typeof(Program));
+            builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 
             // Accessing HttpContext property (cookies)
             builder.Services.AddHttpContextAccessor();

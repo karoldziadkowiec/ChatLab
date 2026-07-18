@@ -1,8 +1,7 @@
 ﻿using ChatLab.CoreService.Models.DTOs;
+using ChatLab.CoreService.RealTime.Authorization;
 using ChatLab.CoreService.Services.Interfaces;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
 
 namespace ChatLab.CoreService.RealTime.SignalR
@@ -11,31 +10,20 @@ namespace ChatLab.CoreService.RealTime.SignalR
     {
         private readonly IChatService _chatService;
         private readonly IMessageService _messageService;
-        private readonly bool _allowNonParticipants;
 
-        public ChatHub(IChatService chatService, IMessageService messageService, IConfiguration configuration, IHostEnvironment environment)
+        public ChatHub(IChatService chatService, IMessageService messageService)
         {
             _chatService = chatService;
             _messageService = messageService;
-
-            // For load/performance testing in Development only: allow any authenticated user to join/send
-            // messages in a 1:1 chat without changing the data model.
-            _allowNonParticipants = environment.IsDevelopment() && configuration.GetValue<bool>("LoadTesting:AllowNonParticipantsInChats");
         }
 
         public async Task<ChatLab.CoreService.Entities.Message> SendMessage(MessageSendDTO messageSendDTO)
         {
-            var chat = await _chatService.GetChatById(messageSendDTO.ChatId);
-            if (chat == null)
-                throw new HubException("Chat not found.");
+            var chat = await ChatRoomAuthorizationHelper.RequireChatAccessAsync(_chatService, messageSendDTO.ChatId, Context.User);
+            ChatRoomAuthorizationHelper.RequireSenderMatchesCurrentUserOrAdmin(Context.User, messageSendDTO.SenderId);
 
-            if (!_allowNonParticipants)
-            {
-                // Basic validation: ensure sender belongs to the chat
-                var allowed = $"{chat.User1Id}" == $"{messageSendDTO.SenderId}" || $"{chat.User2Id}" == $"{messageSendDTO.SenderId}";
-                if (!allowed)
-                    throw new HubException("Sender is not a participant of this chat.");
-            }
+            if (!ChatRoomAuthorizationHelper.CanUseReceiver(chat, messageSendDTO.ReceiverId, Context.User))
+                throw new HubException("Receiver is not a participant of this chat.");
 
             var message = await _messageService.SendMessage(messageSendDTO);
             await Clients.Group(messageSendDTO.ChatId.ToString()).SendAsync("ReceiveMessage", message);
@@ -44,17 +32,21 @@ namespace ChatLab.CoreService.RealTime.SignalR
 
         public async Task JoinChat(int chatId, string userId)
         {
-            var chat = await _chatService.GetChatById(chatId);
-            if (chat == null)
-                throw new HubException("Chat not found.");
+            var currentUserId = ChatRoomAuthorizationHelper.GetCurrentUserId(Context.User);
+            if (!string.Equals(currentUserId, userId, StringComparison.Ordinal))
+                throw new HubException("User identity mismatch.");
 
-            if (!_allowNonParticipants)
+            if (ChatRoomAuthorizationHelper.IsAdmin(Context.User))
             {
-                // Validate that joining user belongs to the chat
-                var allowed = $"{chat.User1Id}" == userId || $"{chat.User2Id}" == userId;
-                if (!allowed)
-                    throw new HubException("User is not a participant of this chat.");
+                var chat = await _chatService.GetChatById(chatId);
+                if (chat == null)
+                    throw new HubException("Chat not found.");
+
+                await Groups.AddToGroupAsync(Context.ConnectionId, chatId.ToString());
+                return;
             }
+
+            await ChatRoomAuthorizationHelper.RequireChatMemberAsync(_chatService, chatId, currentUserId);
 
             await Groups.AddToGroupAsync(Context.ConnectionId, chatId.ToString());
         }

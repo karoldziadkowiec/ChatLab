@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ChatLab.CoreService.Entities;
 using ChatLab.CoreService.Models.DTOs;
+using ChatLab.CoreService.RealTime.Authorization;
 using ChatLab.CoreService.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,16 +22,24 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/core/chats/:chatId
-        [Authorize(Policy = "AdminOrUserRights")]
+        [Authorize]
         [HttpGet("{chatId}")]
         public async Task<IActionResult> GetChatById(int chatId)
         {
-            var chat = await _chatService.GetChatById(chatId);
-            if (chat == null)
-                return NotFound($"Chat with ID {chatId} not found.");
-
-            var chatDto = _mapper.Map<ChatDTO>(chat);
-            return Ok(chatDto);
+            try
+            {
+                 var chat = await ChatRoomAuthorizationHelper.RequireChatReadAccessAsync(_chatService, chatId, User);
+                var chatDto = _mapper.Map<ChatDTO>(chat);
+                return Ok(chatDto);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
         }
 
         // GET: api/core/chats
@@ -44,7 +53,7 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/core/chats/count
-        [Authorize(Policy = "AdminOrUserRights")]
+        [Authorize]
         [HttpGet("count")]
         public async Task<IActionResult> GetChatCount()
         {
@@ -53,16 +62,20 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // GET: api/core/chats/between/:user1Id/:user2Id
-        [Authorize(Policy = "AdminOrUserRights")]
+        [Authorize]
         [HttpGet("between/{user1Id}/{user2Id}")]
         public async Task<IActionResult> GetChatIdBetweenUsers(string user1Id, string user2Id)
         {
+            var currentUserId = ChatRoomAuthorizationHelper.GetCurrentUserId(User);
+            if (!string.IsNullOrWhiteSpace(currentUserId) && currentUserId != user1Id && currentUserId != user2Id)
+                return Forbid();
+
             var chatId = await _chatService.GetChatIdBetweenUsers(user1Id, user2Id);
             return Ok(chatId);
         }
 
         // POST: api/core/chats
-        [Authorize(Policy = "AdminOrUserRights")]
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateChat([FromBody] ChatCreateDTO dto)
         {
@@ -72,13 +85,22 @@ namespace ChatLab.CoreService.Controllers
         }
 
         // DELETE: api/core/chats/:chatId
-        [Authorize(Policy = "AdminOrUserRights")]
+        [Authorize]
         [HttpDelete("{chatId}")]
         public async Task<IActionResult> DeleteChat(int chatId)
         {
-            var chat = await _chatService.GetChatById(chatId);
-            if (chat == null)
-                return NotFound($"Chat with ID {chatId} not found.");
+            try
+            {
+                 await ChatRoomAuthorizationHelper.RequireChatReadAccessAsync(_chatService, chatId, User);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
 
             await _chatService.DeleteChat(chatId);
             return NoContent();

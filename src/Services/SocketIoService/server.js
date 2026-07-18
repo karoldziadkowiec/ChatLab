@@ -18,7 +18,6 @@ import {
   MAX_MESSAGE_CONTENT_LENGTH,
   LOG_LEVEL,
   AUTH_HEADER_NAME,
-  ALLOW_NON_PARTICIPANTS_IN_CHATS,
   USE_DIRECT_DB,
   DB_CONNECTION_STRING,
   DB_ODBC_DRIVER
@@ -194,6 +193,49 @@ const dbInsertMessage = async (dto) => {
 // Simple per-socket rate limiting
 const RATE = { windowMs: RATE_LIMIT_WINDOW_MS, max: RATE_LIMIT_MAX };
 
+const extractUserIdFromToken = (authHeader) => {
+  const raw = String(authHeader || '').trim();
+  if (!raw) return null;
+
+  const token = raw.replace(/^Bearer\s+/i, '').trim();
+  if (!token) return null;
+
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+
+  try {
+    const payloadJson = Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+    const payload = JSON.parse(payloadJson);
+    return payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
+      || payload.nameid
+      || payload.sub
+      || null;
+  } catch {
+    return null;
+  }
+};
+
+const extractRoleFromToken = (authHeader) => {
+  const raw = String(authHeader || '').trim();
+  if (!raw) return null;
+
+  const token = raw.replace(/^Bearer\s+/i, '').trim();
+  if (!token) return null;
+
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+
+  try {
+    const payloadJson = Buffer.from(parts[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+    const payload = JSON.parse(payloadJson);
+    return payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+      || payload.role
+      || null;
+  } catch {
+    return null;
+  }
+};
+
 io.on('connection', (socket) => {
   log.debug('Client connected', socket.id);
   socket.data.rate = { count: 0, windowStart: Date.now() };
@@ -212,19 +254,28 @@ io.on('connection', (socket) => {
         return;
       }
 
-      const allowNonParticipants = (process.env.NODE_ENV !== 'production') && ALLOW_NON_PARTICIPANTS_IN_CHATS;
-      if (allowNonParticipants) {
-        const room = `chat-${chatId}`;
-        socket.join(room);
-        socket.data.loadTestingOverride = true;
-        log.debug(`Socket ${socket.id} joined room ${room} (userId=${userId}, load-testing override)`);
-        if (typeof ack === 'function') ack({ ok: true });
+      const tokenUserId = extractUserIdFromToken(authorization || hsAuth.authorization || hsAuth.token);
+      const tokenRole = extractRoleFromToken(authorization || hsAuth.authorization || hsAuth.token);
+      const isAdmin = `${tokenRole}` === 'Admin';
+      if (!tokenUserId || `${tokenUserId}` !== `${userId}`) {
+        log.info(`Unauthorized join attempt: token user mismatch userId=${userId} chatId=${chatId}`);
+        socket.emit('join_error', 'Unauthorized join');
+        socket.emit('error', 'Unauthorized join');
+        if (typeof ack === 'function') ack({ ok: false, error: 'Unauthorized join' });
         return;
       }
 
       const numericChatId = Number(chatId);
       if (!Number.isFinite(numericChatId) || numericChatId <= 0) {
         if (typeof ack === 'function') ack({ ok: false, error: 'Invalid chatId' });
+        return;
+      }
+
+      if (isAdmin) {
+        const room = `chat-${numericChatId}`;
+        socket.join(room);
+        log.debug(`Socket ${socket.id} joined room ${room} (admin override)`);
+        if (typeof ack === 'function') ack({ ok: true });
         return;
       }
 
@@ -259,7 +310,6 @@ io.on('connection', (socket) => {
       }
       const room = `chat-${numericChatId}`;
       socket.join(room);
-      socket.data.loadTestingOverride = false;
       log.debug(`Socket ${socket.id} joined room ${room} (userId=${userId})`);
       if (typeof ack === 'function') ack({ ok: true });
     } catch (e) {
@@ -280,21 +330,26 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Rate limit check (disabled when load-testing override is enabled)
-      if (!socket.data.loadTestingOverride) {
-        const now = Date.now();
-        const rate = socket.data.rate || { count: 0, windowStart: now };
-        if (now - rate.windowStart >= RATE.windowMs) {
-          rate.windowStart = now;
-          rate.count = 0;
-        }
-        rate.count += 1;
-        socket.data.rate = rate;
-        if (rate.count > RATE.max) {
-          const err = { error: 'Rate limit exceeded' };
-          if (typeof ack === 'function') ack(err);
-          return;
-        }
+      const tokenUserId = extractUserIdFromToken(authorization || hsAuth.authorization || hsAuth.token);
+      const tokenRole = extractRoleFromToken(authorization || hsAuth.authorization || hsAuth.token);
+      const isAdmin = `${tokenRole}` === 'Admin';
+      if (!tokenUserId || `${tokenUserId}` !== `${messageDto.senderId}`) {
+        if (typeof ack === 'function') ack({ error: 'Unauthorized sender' });
+        return;
+      }
+
+      const now = Date.now();
+      const rate = socket.data.rate || { count: 0, windowStart: now };
+      if (now - rate.windowStart >= RATE.windowMs) {
+        rate.windowStart = now;
+        rate.count = 0;
+      }
+      rate.count += 1;
+      socket.data.rate = rate;
+      if (rate.count > RATE.max) {
+        const err = { error: 'Rate limit exceeded' };
+        if (typeof ack === 'function') ack(err);
+        return;
       }
 
       const numericChatId = Number(messageDto.chatId);
@@ -304,9 +359,38 @@ io.on('connection', (socket) => {
       }
 
       const room = `chat-${numericChatId}`;
-      // Basic authorization: require the socket to have joined the room (unless load-testing override is enabled).
-      if (!socket.data.loadTestingOverride && !socket.rooms.has(room)) {
+      // Basic authorization: require the socket to have joined the room.
+      if (!socket.rooms.has(room)) {
         if (typeof ack === 'function') ack({ error: 'Not joined to this chat room' });
+        return;
+      }
+
+      let chat;
+      if (USE_DIRECT_DB) {
+        chat = await dbGetChatParticipants(numericChatId);
+      } else {
+        const authHeader = authorization || (socket.handshake?.auth?.authorization);
+        const headers = authHeader ? { [AUTH_HEADER_NAME]: authHeader } : hsHeader;
+        const resp = await api.get(`/api/core/chats/${numericChatId}`, { headers });
+        const data = resp.data || {};
+        chat = {
+          User1Id: data.user1Id,
+          User2Id: data.user2Id
+        };
+      }
+
+      if (!chat) {
+        if (typeof ack === 'function') ack({ error: 'Chat not found' });
+        return;
+      }
+
+      if (!isAdmin && `${chat.User1Id}` !== `${messageDto.senderId}` && `${chat.User2Id}` !== `${messageDto.senderId}`) {
+        if (typeof ack === 'function') ack({ error: 'Unauthorized sender' });
+        return;
+      }
+
+      if (!isAdmin && `${chat.User1Id}` !== `${messageDto.receiverId}` && `${chat.User2Id}` !== `${messageDto.receiverId}`) {
+        if (typeof ack === 'function') ack({ error: 'Invalid receiver' });
         return;
       }
 

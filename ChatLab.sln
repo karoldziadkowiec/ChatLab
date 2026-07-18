@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatLab.ProblemService", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProblemService.IntegrationTests", "src\Tests\ProblemService.IntegrationTests\ProblemService.IntegrationTests.csproj", "{E032A77B-A104-C055-26E8-31709AD79876}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "IntegrationTests", "IntegrationTests", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreService.IntegrationTests", "src\Tests\CoreService.IntegrationTests\CoreService.IntegrationTests.csproj", "{45987908-1A33-CF44-8B7C-69CA8520A288}"
 EndProject

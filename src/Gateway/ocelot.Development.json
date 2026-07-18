@@ -3,14 +3,14 @@
     {
       "DownstreamPathTemplate": "/api/core/chat/stream",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "coreservice", "Port": 8001 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
       "UpstreamPathTemplate": "/api/core/chat/stream",
       "UpstreamHttpMethod": ["GET", "OPTIONS"]
     },
     {
       "DownstreamPathTemplate": "/api/core/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "coreservice", "Port": 8001 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
       "UpstreamPathTemplate": "/api/core/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
@@ -18,7 +18,7 @@
     {
       "DownstreamPathTemplate": "/rt/signalr",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "coreservice", "Port": 8001 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
       "UpstreamPathTemplate": "/rt/signalr",
       "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
@@ -26,7 +26,7 @@
     {
       "DownstreamPathTemplate": "/rt/signalr/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "coreservice", "Port": 8001 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
       "UpstreamPathTemplate": "/rt/signalr/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
@@ -34,21 +34,21 @@
     {
       "DownstreamPathTemplate": "/rt/ws",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "coreservice", "Port": 8001 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
       "UpstreamPathTemplate": "/rt/ws",
       "UpstreamHttpMethod": ["GET", "OPTIONS"]
     },
     {
       "DownstreamPathTemplate": "/rt/ws/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "coreservice", "Port": 8001 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
       "UpstreamPathTemplate": "/rt/ws/{everything}",
       "UpstreamHttpMethod": ["GET", "OPTIONS"]
     },
     {
       "DownstreamPathTemplate": "/api/problems/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "problemservice", "Port": 8002 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8002 }],
       "UpstreamPathTemplate": "/api/problems/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
@@ -56,7 +56,7 @@
     {
       "DownstreamPathTemplate": "/api/problems",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "problemservice", "Port": 8002 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8002 }],
       "UpstreamPathTemplate": "/api/problems",
       "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 1000, "TimeoutValue": 5000 }
@@ -64,27 +64,27 @@
     {
       "DownstreamPathTemplate": "/socket.io/",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "socketio", "Port": 8016 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8016 }],
       "UpstreamPathTemplate": "/socket.io/",
       "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"]
     },
     {
       "DownstreamPathTemplate": "/socket.io/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "socketio", "Port": 8016 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8016 }],
       "UpstreamPathTemplate": "/socket.io/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "OPTIONS"]
     },
     {
       "DownstreamPathTemplate": "/chatlab.grpc.ChatGrpc/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "coreservice", "Port": 8001 }],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 8001 }],
       "UpstreamPathTemplate": "/chatlab.grpc.ChatGrpc/{everything}",
       "UpstreamHttpMethod": ["POST", "OPTIONS"]
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://gateway:8000",
+    "BaseUrl": "http://localhost:8000",
     "RequestIdKey": "X-Request-Id",
     "RateLimitOptions": {
       "ClientIdHeader": "X-Client-Id",

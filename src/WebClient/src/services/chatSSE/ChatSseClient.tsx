@@ -1,4 +1,5 @@
 import ApiCoreURL from '../../config/ApiCoreConfig';
+import AccountService from '../api/AccountService';
 
 export default class ChatSseClient {
     private chatId: number;
@@ -13,8 +14,10 @@ export default class ChatSseClient {
         this.baseUrl = baseUrl ?? ApiCoreURL;
     }
 
-    connect() {
-        const url = `${this.baseUrl}/chat/stream?chatId=${this.chatId}`;
+    async connect() {
+        const token = await AccountService.getToken();
+        const tokenQuery = token ? `&access_token=${encodeURIComponent(token)}` : '';
+        const url = `${this.baseUrl}/chat/stream?chatId=${this.chatId}${tokenQuery}`;
         // withCredentials helps when the backend auth/session is cookie-based.
         // (Even if this SSE endpoint is anonymous today, this keeps it working when auth is enabled later.)
         this.eventSource = new EventSource(url, { withCredentials: true });

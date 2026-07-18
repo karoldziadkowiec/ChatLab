@@ -9,7 +9,7 @@ import ChatService from '../../services/api/ChatService';
 import MessageService from '../../services/api/MessageService';
 import CommunicationTechnologyService from '../../services/api/CommunicationTechnologyService';
 import CommunicationTechnologyConst from "../../models/enums/CommunicationTechnologyConst";
-import ChatHubSignalR from '../../services/chatSingnalR/ChatHubSignalR';
+import ChatHubSignalR from '../../services/chatSignalR/ChatHubSignalR';
 import { MessageContentConfig, MessageIntervalConfigInMs, SimulationTimeConfigInMs } from '../../config/SimulationConfig';
 import ChatModel from '../../models/interfaces/Chat';
 import Message from '../../models/interfaces/Message';
@@ -27,7 +27,6 @@ const ChatSignalR = () => {
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | null>(null);
     const [chatData, setChatData] = useState<ChatModel | null>(null);
-    const [user, setUser] = useState<UserDTO | null>(null);
     const [receiver, setReceiver] = useState<UserDTO | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [chatHubSignalR, setChatHubSignalR] = useState<ChatHubSignalR | null>(null);
@@ -104,13 +103,10 @@ const ChatSignalR = () => {
                 // When current user is not a participant, still allow entering the room (load-testing mode).
                 // We keep the header stable by showing one of the chat participants as the "receiver".
                 if (_chatData.user1Id === currentUserId) {
-                    setUser(_chatData.user1);
                     setReceiver(_chatData.user2);
                 } else if (_chatData.user2Id === currentUserId) {
-                    setUser(_chatData.user2);
                     setReceiver(_chatData.user1);
                 } else {
-                    setUser(null);
                     setReceiver(_chatData.user1 ?? _chatData.user2);
                 }
 

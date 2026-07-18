@@ -1,143 +1,295 @@
 # ChatLab
 
-Mikroserwisowa aplikacja chatu: ASP.NET Core Web API (.NET 8) + Ocelot (API Gateway) + React (TypeScript) + MS SQL Server.
+## About project
 
-Gateway jest jedynym publicznym wejściem dla WebClient (CORS i routowanie). Serwisy backendowe można też uruchamiać bezpośrednio (np. pod Swaggerem) podczas dev.
+ChatLab is a web application for comparing and testing real-time communication technologies in a chat system. The application allows users to create chats, exchange messages, manage social relations, report problems, and use multiple real-time communication mechanisms in the same domain.
 
-## Składniki
+The project focuses on practical comparison of communication technologies used in web applications:
 
-| Komponent | Opis | Domyślny port |
-|---|---|---:|
-| `src/Gateway` | Ocelot API Gateway | 8000 |
-| `src/Services/CoreService` | Użytkownicy, konta, czaty, wiadomości + RT (SignalR/WS/SSE) + gRPC | 8001 |
-| `src/Services/ProblemService` | Serwis „problems” (osobna baza) | 8002 |
-| `src/Services/SocketIoService` | RT przez Socket.IO (Node.js), zapis wiadomości idzie przez Gateway | 8016 |
-| `src/WebClient` | React + TS (Create React App) | 3000 |
-| `docker-compose.yml` | Lokalne środowisko (SQL Server + migracje + serwisy) | — |
+- SignalR
+- WebSockets
+- Polling
+- Server-Sent Events (SSE)
+- Socket.IO
+- gRPC / gRPC-Web
 
-## Wymagania
+The repository also contains a Google Colab recommendation system that supports the selection of a real-time communication technology based on scenario parameters and historical performance results. The recommendation model uses a hybrid CBR + TOPSIS approach.
 
-- .NET SDK 8.x
-- Node.js (zalecane LTS)
-- (Opcjonalnie) Docker + Docker Compose
-- MS SQL Server (lokalnie lub w Dockerze)
+## Construction and communication of application
 
-## Szybki start (Docker Compose)
+- Application type: **web application**
+- Architecture: **microservice-oriented client-server application**
+- Main services:
+  - **WebClient** - React frontend
+  - **Gateway** - Ocelot API Gateway
+  - **CoreService** - users, chats, messages, communication technologies, authentication, real-time endpoints
+  - **ProblemService** - problem reporting module
+  - **SocketIoService** - Socket.IO messaging service
+  - **SQL Server** - relational database
+- Communication:
+  - **REST API**
+  - **SignalR**
+  - **WebSockets**
+  - **Polling**
+  - **Server-Sent Events (SSE)**
+  - **Socket.IO**
+  - **gRPC-Web**
 
-Najprostsza opcja: uruchamia całość wraz z SQL Server i migracjami EF.
+### Project architecture
 
-```powershell
-docker compose up --build
+![Project architecture](docs/img/00.png)
+
+### Database schema
+
+![Database schema](docs/img/01.png)
+
+## Technologies
+
+### Application stack
+
+- **Frontend:** React, TypeScript, HTML, CSS
+- **Backend:** ASP.NET Core Web API, C#, .NET 8
+- **Gateway:** Ocelot API Gateway
+- **Real-time service:** Node.js, Express, Socket.IO
+- **Database:** Microsoft SQL Server 2022
+- **ORM:** Entity Framework Core
+- **Authentication and authorization:** JWT Bearer, ASP.NET Identity, role-based access control
+- **Testing:** xUnit, integration tests with SQL Server
+- **Containerization:** Docker, Docker Compose
+- **CI:** GitHub Actions
+- **Container registry:** Docker Hub
+
+### Backend and services
+
+The backend is split into independent services responsible for separate parts of the domain:
+
+- **CoreService** handles users, authentication, chats, messages, communication technologies, and real-time endpoints.
+- **ProblemService** handles problem reports.
+- **Gateway** exposes a single API entry point and routes requests to downstream services.
+- **SocketIoService** provides Socket.IO communication and integrates with the CoreService API.
+
+The services use REST APIs for standard operations and dedicated real-time protocols for chat communication.
+
+### Real-time communication technologies
+
+ChatLab implements and compares several communication mechanisms:
+
+- SignalR
+- WebSockets
+- Polling
+- Server-Sent Events (SSE)
+- Socket.IO
+- gRPC-Web
+
+Each technology is integrated with the same chat domain, which makes it possible to compare message delivery behavior, latency, throughput, and reliability under similar conditions.
+
+### Frontend
+
+The frontend is a React application written in TypeScript. It communicates with the backend through REST APIs and technology-specific real-time clients. The application includes protected routes, role-based views, chat screens, administrative panels, reporting screens, and performance-oriented chat views.
+
+### Data and persistence
+
+The application uses Microsoft SQL Server as the relational database. Entity Framework Core is used for data access, schema migrations, relationships, and integration with ASP.NET Identity.
+
+### CI and image publishing
+
+GitHub Actions builds the Docker images, runs integration tests against SQL Server, and publishes application images to Docker Hub. The workflow stops after publishing images and does not deploy the application to a remote server.
+
+Published images:
+
+- `${DOCKERHUB_USERNAME}/chatlab-coreservice:latest`
+- `${DOCKERHUB_USERNAME}/chatlab-problemservice:latest`
+- `${DOCKERHUB_USERNAME}/chatlab-socketio:latest`
+- `${DOCKERHUB_USERNAME}/chatlab-gateway:latest`
+- `${DOCKERHUB_USERNAME}/chatlab-webclient:latest`
+
+## Roles (actors) of the application
+
+- Observer
+- User
+- Admin
+
+## Main features
+
+- **Observer**:
+  - account registration
+  - login
+
+- **User**:
+  - account management
+  - browsing the community
+  - following and unfollowing users
+  - viewing friends and followers
+  - creating and opening chats
+  - chatting with other users using multiple real-time technologies
+  - measuring message delivery time and throughput in chat views
+  - reporting application problems
+  - logging out
+
+- **Admin**:
+  - user management
+  - chat management
+  - communication technology management
+  - problem report management
+  - user and chat statistics
+  - assigning and removing administrator privileges
+  - using real-time chat features
+  - logging out
+
+## Recommendation system
+
+The `colab` directory contains a Google Colab notebook:
+
+- `colab/RT_Technology_Recommendation_System.ipynb`
+
+It is a decision support system for recommending a Real-Time communication technology based on scenario parameters and historical performance test results. The model combines:
+
+- **CBR (Case-Based Reasoning)** for finding similar historical scenarios,
+- **TOPSIS** for ranking technologies using multiple performance criteria.
+
+More details are available in:
+
+- `colab/README.md`
+
+## Docker
+
+The application can be built and started with Docker Compose:
+
+```bash
+docker compose up -d --build
 ```
 
-Po starcie:
+When using images published to Docker Hub, set `DOCKERHUB_USERNAME` and pull the images:
 
-- WebClient: http://localhost:3000
-- Gateway: http://localhost:8000
-
-## Szybki start (lokalnie, bez Dockera)
-
-1) SQL Server
-
-- Upewnij się, że SQL Server działa.
-- Ustaw connection string w:
-  - `src/Services/CoreService/appsettings.json` (`ConnectionStrings:MSSQLConnectionString`)
-  - `src/Services/ProblemService/appsettings.json` (`ConnectionStrings:MSSQLConnectionString`)
-
-2) Backend (.NET) — w oddzielnych terminalach
-
-```powershell
-cd src/Services/CoreService
-dotnet run
+```bash
+DOCKERHUB_USERNAME=<dockerhub-user-or-org> docker compose pull
+DOCKERHUB_USERNAME=<dockerhub-user-or-org> docker compose up -d --no-build
 ```
 
-```powershell
-cd src/Services/ProblemService
-dotnet run
-```
+Main ports:
+
+- `3000` - WebClient
+- `8000` - Gateway
+- `8001` - CoreService
+- `8002` - ProblemService
+- `8016` - SocketIoService
+- `1433` - SQL Server
+
+## Tests
+
+The solution contains integration tests for:
+
+- CoreService
+- ProblemService
+
+The tests can use SQL Server from Docker through the `TEST_SQLSERVER_CONNSTR` environment variable:
 
 ```powershell
-cd src/Gateway
-dotnet run
+$env:TEST_SQLSERVER_CONNSTR='Server=localhost,1433;User Id=sa;Password=Your_password123;TrustServerCertificate=True;MultipleActiveResultSets=true'
+dotnet test src\Tests\CoreService.IntegrationTests\CoreService.IntegrationTests.csproj --configuration Release
+dotnet test src\Tests\ProblemService.IntegrationTests\ProblemService.IntegrationTests.csproj --configuration Release
 ```
 
-3) Socket.IO (Node.js)
+The current integration test result is:
 
-```powershell
-cd src/Services/SocketIoService
-npm install
-npm start
-```
+- **63/63 tests passed**
 
-4) WebClient (React)
+## Images
 
-```powershell
-cd src/WebClient
-npm install
-npm start
-```
+### Application views
 
-## Routing przez Gateway
+Login page:
 
-Konfiguracja routingu jest w `src/Gateway/ocelot.json`.
+![Login page](docs/img/1.png)
 
-Przykłady (Gateway → downstream):
+Registration page:
 
-- CoreService REST: `http://localhost:8000/api/core/users` → `http://localhost:8001/api/core/users`
-- CoreService SSE stream: `http://localhost:8000/api/core/chat/stream` → `http://localhost:8001/api/core/chat/stream`
-- ProblemService REST: `http://localhost:8000/api/problems` → `http://localhost:8002/api/problems`
+![Registration page](docs/img/2.png)
 
-Real-time:
+Home page:
 
-- SignalR hub: `http://localhost:8000/rt/signalr` → `http://localhost:8001/rt/signalr`
-- WebSockets endpoint: `http://localhost:8000/rt/ws` → `http://localhost:8001/rt/ws`
-- Socket.IO (proxy path): `http://localhost:8000/rt/socketio/socket.io/` → `http://localhost:8016/socket.io/`
+![Home page](docs/img/3.png)
 
-W praktyce klient Socket.IO powinien używać `path: "/rt/socketio/socket.io"`.
+My profile page:
 
-## Swagger
+![My profile page](docs/img/4.png)
 
-Swagger UI jest wystawiony bezpośrednio na serwisach (w `Development`):
+Community page:
 
-- CoreService: `http://localhost:8001/swagger`
-- ProblemService: `http://localhost:8002/swagger`
+![Community page](docs/img/5.png)
 
-Gateway nie proxy’uje swaggera.
+User details in the community page:
 
-## Konfiguracja (najważniejsze)
+![User details](docs/img/6.png)
 
-### Connection string
+My Friends page:
 
-Serwisy biorą connection string z `ConnectionStrings:MSSQLConnectionString` (appsettings lub zmienna środowiskowa `ConnectionStrings__MSSQLConnectionString`).
+![My Friends page](docs/img/7.png)
 
-### JWT
+My Chats page:
 
-CoreService i ProblemService używają JWT (`JWT:Secret`, `JWT:ValidIssuer`, `JWT:ValidAudience`).
+![My Chats page](docs/img/8.png)
 
-Uwaga: w dev CoreService nie wymusza HTTPS redirect (żeby nie psuć proxy/streamingu). Jeśli generujesz tokeny lokalnie, dopilnuj spójności `JWT:ValidIssuer` z faktycznym adresem serwisu (np. `http://localhost:8001`).
+Chat room for WebSockets:
 
-## gRPC / gRPC-Web
+![WebSockets chat room](docs/img/9.png)
 
-CoreService wystawia gRPC (z włączonym gRPC-Web). Gateway proxy’uje ścieżkę:
+Chat room for gRPC with benchmarking performance testing mechanism:
 
-- `POST http://localhost:8000/chatlab.grpc.ChatGrpc/{method}` → `http://localhost:8001/chatlab.grpc.ChatGrpc/{method}`
+![gRPC chat room](docs/img/10.png)
 
-WebClient ma skrypt do generowania klienta gRPC-Web:
+Support page:
 
-```powershell
-cd src/WebClient
-npm run gen:grpc-web
-```
+![Support page](docs/img/11.png)
 
-## Testy
+Admin dashboard:
 
-W repo są projekty testów integracyjnych (folder `src/Tests`). Uruchom:
+![Admin dashboard](docs/img/12.png)
 
-```powershell
-dotnet test
-```
+Users panel for admin:
 
-## Troubleshooting
+![Users panel](docs/img/13.png)
 
-- `401 Unauthorized`: sprawdź `JWT:Secret` oraz zgodność `JWT:ValidIssuer`/`JWT:ValidAudience` z tym, z czego korzysta klient.
-- Problemy z RT przez Gateway: upewnij się, że Gateway ma włączone `UseWebSockets()` (jest w kodzie) i że używasz właściwych ścieżek z sekcji „Routing przez Gateway”.
+Chat rooms panel for admin:
+
+![Chat rooms panel](docs/img/14.png)
+
+User reports and statistics:
+
+![User reports and statistics](docs/img/15.png)
+
+Chat reports and statistics:
+
+![Chat reports and statistics](docs/img/16.png)
+
+Reported problems:
+
+![Reported problems](docs/img/17.png)
+
+Make an admin panel:
+
+![Make an admin panel](docs/img/18.png)
+
+### Mobile version of web app
+
+Login page:
+
+![Mobile login page](docs/img/19.png)
+
+Home page:
+
+![Mobile home page](docs/img/20.png)
+
+Chat room page:
+
+![Mobile chat room page](docs/img/21.png)
+
+My profile page:
+
+![Mobile profile page](docs/img/22.png)
+
+### Integration tests results
+
+63/63 tests passed:
+
+![Integration tests results](docs/img/23.png)

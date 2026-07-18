@@ -1,101 +1,37 @@
-# ChatLab
+# GitHub Actions
 
-## About project
+This directory contains the CI configuration for ChatLab.
 
-ChatLab is a web application for comparing and testing real-time communication technologies in a chat system. The application allows users to create chats, exchange messages, manage social relations, report problems, and use multiple real-time communication mechanisms in the same domain.
+The main workflow is:
 
-The project focuses on practical comparison of communication technologies used in web applications:
+- `.github/workflows/deploy.yml`
 
-- SignalR
-- WebSockets
-- Polling
-- Server-Sent Events (SSE)
-- Socket.IO
-- gRPC / gRPC-Web
+The workflow builds Docker images, runs integration tests against SQL Server, and publishes application images to Docker Hub. It does not deploy the application to a remote server.
 
-The repository also contains a Google Colab recommendation system that supports the selection of a real-time communication technology based on scenario parameters and historical performance results. The recommendation model uses a hybrid CBR + TOPSIS approach.
+## Workflow Triggers
 
-## Construction and communication of application
+The workflow runs on:
 
-- Application type: **web application**
-- Architecture: **microservice-oriented client-server application**
-- Main services:
-  - **WebClient** - React frontend
-  - **Gateway** - Ocelot API Gateway
-  - **CoreService** - users, chats, messages, communication technologies, authentication, real-time endpoints
-  - **ProblemService** - problem reporting module
-  - **SocketIoService** - Socket.IO messaging service
-  - **SQL Server** - relational database
-- Communication:
-  - **REST API**
-  - **SignalR**
-  - **WebSockets**
-  - **Polling**
-  - **Server-Sent Events (SSE)**
-  - **Socket.IO**
-  - **gRPC-Web**
+- push to `main`,
+- pull requests targeting `main`,
+- manual execution with `workflow_dispatch`.
 
-### Project architecture
+Pull requests are used only for validation. They build Docker images and run tests, but they do not push images to Docker Hub.
 
-![Project architecture](docs/img/00.png)
+Pushes to `main` and manual runs build, test, and publish Docker images to Docker Hub.
 
-### Database schema
+## Jobs
 
-![Database schema](docs/img/01.png)
+### `build`
 
-## Technologies
+The `build` job:
 
-### Application stack
+1. Checks out the repository.
+2. Logs in to Docker Hub for non-PR runs.
+3. Builds Docker images with Docker Compose.
+4. Pushes application images to Docker Hub for non-PR runs.
 
-- **Frontend:** React, TypeScript, HTML, CSS
-- **Backend:** ASP.NET Core Web API, C#, .NET 8
-- **Gateway:** Ocelot API Gateway
-- **Real-time service:** Node.js, Express, Socket.IO
-- **Database:** Microsoft SQL Server 2022
-- **ORM:** Entity Framework Core
-- **Authentication and authorization:** JWT Bearer, ASP.NET Identity, role-based access control
-- **Testing:** xUnit, integration tests with SQL Server
-- **Containerization:** Docker, Docker Compose
-- **CI:** GitHub Actions
-- **Container registry:** Docker Hub
-
-### Backend and services
-
-The backend is split into independent services responsible for separate parts of the domain:
-
-- **CoreService** handles users, authentication, chats, messages, communication technologies, and real-time endpoints.
-- **ProblemService** handles problem reports.
-- **Gateway** exposes a single API entry point and routes requests to downstream services.
-- **SocketIoService** provides Socket.IO communication and integrates with the CoreService API.
-
-The services use REST APIs for standard operations and dedicated real-time protocols for chat communication.
-
-### Real-time communication technologies
-
-ChatLab implements and compares several communication mechanisms:
-
-- SignalR
-- WebSockets
-- Polling
-- Server-Sent Events (SSE)
-- Socket.IO
-- gRPC-Web
-
-Each technology is integrated with the same chat domain, which makes it possible to compare message delivery behavior, latency, throughput, and reliability under similar conditions.
-
-### Frontend
-
-The frontend is a React application written in TypeScript. It communicates with the backend through REST APIs and technology-specific real-time clients. The application includes protected routes, role-based views, chat screens, administrative panels, reporting screens, and performance-oriented chat views.
-
-### Data and persistence
-
-The application uses Microsoft SQL Server as the relational database. Entity Framework Core is used for data access, schema migrations, relationships, and integration with ASP.NET Identity.
-
-### CI and image publishing
-
-GitHub Actions builds the Docker images, runs integration tests against SQL Server, and publishes application images to Docker Hub. The workflow stops after publishing images and does not deploy the application to a remote server.
-
-Published images:
+The images pushed to Docker Hub are:
 
 - `${DOCKERHUB_USERNAME}/chatlab-coreservice:latest`
 - `${DOCKERHUB_USERNAME}/chatlab-problemservice:latest`
@@ -103,193 +39,82 @@ Published images:
 - `${DOCKERHUB_USERNAME}/chatlab-gateway:latest`
 - `${DOCKERHUB_USERNAME}/chatlab-webclient:latest`
 
-## Roles (actors) of the application
+The SQL Server image is not built or pushed. It is pulled from Microsoft Container Registry:
 
-- Observer
-- User
-- Admin
+- `mcr.microsoft.com/mssql/server:2022-latest`
 
-## Main features
+### `test`
 
-- **Observer**:
-  - account registration
-  - login
+The `test` job:
 
-- **User**:
-  - account management
-  - browsing the community
-  - following and unfollowing users
-  - viewing friends and followers
-  - creating and opening chats
-  - chatting with other users using multiple real-time technologies
-  - measuring message delivery time and throughput in chat views
-  - reporting application problems
-  - logging out
+1. Starts a SQL Server service container.
+2. Installs .NET 8.
+3. Restores the solution.
+4. Runs integration tests from the solution.
 
-- **Admin**:
-  - user management
-  - chat management
-  - communication technology management
-  - problem report management
-  - user and chat statistics
-  - assigning and removing administrator privileges
-  - using real-time chat features
-  - logging out
+The tests use the environment variable:
 
-## Recommendation system
-
-The `colab` directory contains a Google Colab notebook:
-
-- `colab/RT_Technology_Recommendation_System.ipynb`
-
-It is a decision support system for recommending a Real-Time communication technology based on scenario parameters and historical performance test results. The model combines:
-
-- **CBR (Case-Based Reasoning)** for finding similar historical scenarios,
-- **TOPSIS** for ranking technologies using multiple performance criteria.
-
-More details are available in:
-
-- `colab/README.md`
-
-## Docker
-
-The application can be built and started with Docker Compose:
-
-```bash
-docker compose up -d --build
+```text
+TEST_SQLSERVER_CONNSTR=Server=localhost,1433;User Id=sa;Password=Your_password123;TrustServerCertificate=True;MultipleActiveResultSets=true
 ```
 
-When using images published to Docker Hub, set `DOCKERHUB_USERNAME` and pull the images:
+This forces the integration tests to use SQL Server running in Docker instead of Windows LocalDB.
+
+The test projects covered by the solution are:
+
+- `src/Tests/CoreService.IntegrationTests`
+- `src/Tests/ProblemService.IntegrationTests`
+
+## Required GitHub Secrets
+
+The workflow requires the following repository secrets for non-PR runs:
+
+| Secret | Description |
+| --- | --- |
+| `DOCKERHUB_USERNAME` | Docker Hub username or organization name used as the image namespace. |
+| `DOCKERHUB_TOKEN` | Docker Hub access token used to push images. |
+
+Use a Docker Hub access token instead of the Docker Hub account password.
+
+## What Happens After Docker Hub
+
+The workflow stops after publishing images to Docker Hub. Deployment is intentionally not performed by GitHub Actions.
+
+To deploy the application elsewhere, pull the published images and start the stack with Docker Compose using the same `DOCKERHUB_USERNAME` value:
 
 ```bash
 DOCKERHUB_USERNAME=<dockerhub-user-or-org> docker compose pull
 DOCKERHUB_USERNAME=<dockerhub-user-or-org> docker compose up -d --no-build
 ```
 
-Main ports:
+## Concurrency
 
-- `3000` - WebClient
-- `8000` - Gateway
-- `8001` - CoreService
-- `8002` - ProblemService
-- `8016` - SocketIoService
-- `1433` - SQL Server
+The workflow uses concurrency:
 
-## Tests
-
-The solution contains integration tests for:
-
-- CoreService
-- ProblemService
-
-The tests can use SQL Server from Docker through the `TEST_SQLSERVER_CONNSTR` environment variable:
-
-```powershell
-$env:TEST_SQLSERVER_CONNSTR='Server=localhost,1433;User Id=sa;Password=Your_password123;TrustServerCertificate=True;MultipleActiveResultSets=true'
-dotnet test src\Tests\CoreService.IntegrationTests\CoreService.IntegrationTests.csproj --configuration Release
-dotnet test src\Tests\ProblemService.IntegrationTests\ProblemService.IntegrationTests.csproj --configuration Release
+```yaml
+concurrency:
+  group: docker-publish-${{ github.ref }}
+  cancel-in-progress: true
 ```
 
-The current integration test result is:
+If multiple workflow runs are started for the same branch, the newer run cancels the older one.
 
-- **63/63 tests passed**
+## Timeouts
 
-## Images
+Each job has a timeout:
 
-### Application views
+- `build`: 20 minutes
+- `test`: 10 minutes
 
-Login page:
+This prevents stalled builds or tests from running indefinitely.
 
-![Login page](docs/img/1.png)
+## Permissions
 
-Registration page:
+The workflow uses minimal repository permissions:
 
-![Registration page](docs/img/2.png)
+```yaml
+permissions:
+  contents: read
+```
 
-Home page:
-
-![Home page](docs/img/3.png)
-
-My profile page:
-
-![My profile page](docs/img/4.png)
-
-Community page:
-
-![Community page](docs/img/5.png)
-
-User details in the community page:
-
-![User details](docs/img/6.png)
-
-My Friends page:
-
-![My Friends page](docs/img/7.png)
-
-My Chats page:
-
-![My Chats page](docs/img/8.png)
-
-Chat room for WebSockets:
-
-![WebSockets chat room](docs/img/9.png)
-
-Chat room for gRPC with benchmarking performance testing mechanism:
-
-![gRPC chat room](docs/img/10.png)
-
-Support page:
-
-![Support page](docs/img/11.png)
-
-Admin dashboard:
-
-![Admin dashboard](docs/img/12.png)
-
-Users panel for admin:
-
-![Users panel](docs/img/13.png)
-
-Chat rooms panel for admin:
-
-![Chat rooms panel](docs/img/14.png)
-
-User reports and statistics:
-
-![User reports and statistics](docs/img/15.png)
-
-Chat reports and statistics:
-
-![Chat reports and statistics](docs/img/16.png)
-
-Reported problems:
-
-![Reported problems](docs/img/17.png)
-
-Make an admin panel:
-
-![Make an admin panel](docs/img/18.png)
-
-### Mobile version of web app
-
-Login page:
-
-![Mobile login page](docs/img/19.png)
-
-Home page:
-
-![Mobile home page](docs/img/20.png)
-
-Chat room page:
-
-![Mobile chat room page](docs/img/21.png)
-
-My profile page:
-
-![Mobile profile page](docs/img/22.png)
-
-### Integration tests results
-
-63/63 tests passed:
-
-![Integration tests results](docs/img/23.png)
+The workflow only needs read access to repository contents because image publishing is handled through Docker Hub credentials stored in GitHub Secrets.
